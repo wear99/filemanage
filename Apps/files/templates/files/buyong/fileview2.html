@@ -1,0 +1,67 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body onload="showPdfFile()">
+<div id="container">
+    <div id="pop"></div>
+    <canvas id='the-canvas'></canvas>
+
+</div>
+<script src="{% static 'pdfjs/build/pdf.js' %}"></script>
+<script src="{% static 'pdfjs/build/pdf.worker.js' %}"></script>
+<script>
+    /*将请求来的base64编码的pdf文件，替换多余的空格和换行（为了兼容其他浏览器）
+    * 再使用浏览器自带的atob()的方式解析
+    * */
+    /*转化编码格式*/
+    function converData(data) {
+        data = data.replace(/[\n\r]/g, '');
+        var raw = window.atob(data);
+        var rawLength = raw.length;
+        var array = new Uint8Array(new ArrayBuffer(rawLength));
+        for (var i = 0; i < rawLength; i++) {
+            array[i] = raw.charCodeAt(i)
+        };
+        return array
+    }
+ 
+    /*将解码后的值传给PDFJS.getDocument(),交给pdf.js处理*/
+    function showPdfFile() {
+        
+        var fileContent = converData("{{ b64|safe }}");
+        var loadingTask=pdfjsLib.getDocument(fileContent)
+        loadingTask.promise.then(function(pdf) {
+            pages = pdf.numPages;            
+            for (var i = 1; i <= pdf.numPages; i++) {
+                var id = 'page-id' + i;
+                var c= document.createElement('canvas')
+                c.id=id; 
+                document.getElementById('pop').appendChild(c)
+
+                pdf.getPage(i).then(function(page) {
+                    var scale = 1.0;
+                    var viewport = page.getViewport(scale);
+                    var canvas = document.getElementById(id);
+                    var context = canvas.getContext('2d');
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+                    var renderContext = {
+                        canvasContext: context,
+                        viewport: viewport
+                    }
+                page.render(renderContext)
+ 
+            })
+            };
+        });
+    }
+ 
+</script>
+</body>
+</html>

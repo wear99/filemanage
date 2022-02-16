@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+
+{% block title %}文件管理{% endblock %}
+
+{% block content %}
+    <div class="container-fluid">        
+        <h3 class="display-4"> 图纸申请列表</h3>        
+        <div class="table-responsive py-2 col-10 offset-1">
+            <div class='row col-10 py-2 '>
+                <div class="col-3">
+                <a class="btn btn-block {% if 'my' in request.path %}btn-primary{% endif %}"  href="{% url 'application:list' 'my' %}">我的</a>
+                </div>
+                <div class="col-3">
+                <a class="btn btn-block {% if 'pending' in request.path %}btn-primary{% endif %}" href="{% url 'application:list' 'pending' %}">待审核</a>
+                </div>
+                <div class="col-3">
+                <a class="btn btn-block {% if 'closed' in request.path %}btn-primary{% endif %}" href="{% url 'application:list' 'closed' %}">已完成</a>
+                </div>
+                <div class="col-3">
+                <a class="btn btn-block {% if 'all' in request.path %}btn-primary{% endif %}" href="{% url 'application:list' 'all' %}">全部</a>
+                </div>       
+            </div>
+            
+            <table class="table table-bordered table-hover">   
+                <thead>
+                    <tr>
+                    <th>序号</th>              
+                    <th>申请单号</th>
+                    <th>产品名称</th>
+                    <th>申请原因</th>              
+                    <th>申请人</th>
+                    <th>申请时间</th>
+                    <th>状态</th>
+                    <th>详情</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    
+                    {% for obj in page_obj %}
+                        <tr class={% if obj.status < 10 %} 'text-primary'  {% endif %}>
+                            <td class="text-center">{{ forloop.counter }}</td>                    
+                            <td>{{ obj.app_no }}</td>
+                            <td>{{ obj.product }}</td>
+                            <td>{{ obj.description }}</td>
+                            <td>{{ obj.username }}</td>
+                            <td>{{ obj.add_time }}</td>
+                            <td>{{ obj.status.step_name }}</td>
+                            <td><a href= "{% url 'application:detail' obj.app_id %}">查看</a></td>
+                            
+                            {% if obj.status.step < 10 and obj.status.username == request.user.username %}
+                                <td><a href= "{% url 'application:approval' obj.app_id %}">{{ obj.status.step_name }}</a></td>
+                            {% endif %}              
+                        </tr>
+                    {% endfor %}            
+                </tbody>
+            </table> 
+            {% if not model_obj %}            
+                <p class='text'>没有相关记录</p>
+            {% endif %}        
+        </div>
+
+        <div class="pagination col-8 offset-2">
+            <span class="step-links">
+                {% if page_obj.has_previous %}
+                    <a href="?page=1">&laquo; 首页</a>
+                    <a href="?page={{ page_obj.previous_page_number }}">前一页</a>
+                {% endif %}
+
+                <span class="current">
+                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+                </span>
+
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}">下一页</a>
+                    <a href="?page={{ page_obj.paginator.num_pages }}">最后页 &raquo;</a>
+                {% endif %}
+            </span>
+        </div>
+    </div> <!-- /container -->    
+{% endblock %}

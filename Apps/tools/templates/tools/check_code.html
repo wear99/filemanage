@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Excel物料检查{% endblock %}
+ 
+{% block content %}
+    <div class="container">
+        <div class="col-md-10 pt-2">
+        <h3 class="display-4"> Bom物料检查</h3>
+          <form id='form'  method="post" enctype="multipart/form-data">
+                {% if msg %}
+                    <div class="alert alert-warning">{{ msg }}</div>
+                {% endif %}
+            {% csrf_token %}  
+            <div class="form-group">
+                <input class="col-md-8 form-control " type="file" name="file" id="id_file" required>
+                <input type="text" name='task_id' style="display:none" value={{ task_id }}>                
+            </div> 
+            <input type="submit" id='form_sub' value="上传物料文件" class="btn btn-primary ">            
+          </form>  
+        </div> 
+        <table id="task_status" class="table table-bordered"></table>       
+
+    </div> <!-- /container -->
+{% endblock %}
+
+{% block custom-script %}
+    <script>
+        var status='';
+        var cl;
+        $('#form_sub').click(function(){
+            cl=setInterval(get_status,2000)
+        })
+        function get_status(){
+            $.ajax({
+                url:'/tools/getstatus/{{ task_id }}/',
+                method: 'get',
+                //data: f_data,                
+                success: function (res) {
+                    $("#task_status").empty();
+                    for (i in res){
+                        $('#task_status').append("<tr><td>"+res[i]['task']+"</td><td>"+res[i]['rst']+"</td></tr>");
+                        if (res[i]['task']=='处理完毕'){
+                            clearInterval(cl)
+                        };
+                    }                    
+                }
+            })
+    }
+    </script>
+{% endblock %}

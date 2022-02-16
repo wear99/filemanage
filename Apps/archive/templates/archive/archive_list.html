@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+
+{% block title %}发放列表{% endblock %}
+
+{% block content %}
+    <div class="container-fluid">
+        <h3 class="display-4"> 发放单列表</h3> 
+        <form id='form' class="pt-3" action="" method="get">
+            <div class="input-group col-8 offset-2">
+                <input id="search" name=s type="text" class="form-control" placeholder="请输入要查询的内容" aria-label="Text input with segmented dropdown button">
+                <div class="col-3"> 
+                        <button type="submit" id='findfile' class="btn btn-primary btn-block">查 找</button>
+                </div>            
+            </div>
+        </form>
+
+        <div class="table-responsive py-3 col-10 offset-1">
+            {% if model_obj %}
+                <p class='text'>共有{{ model_obj|length }}份发放单</p> 
+            {% else %}
+                <p class='text'>没有相关记录</p>
+            {% endif %} 
+            <table class="table table-bordered table-hover">   
+                <thead>
+                    <tr>
+                    <th>序号</th>              
+                    <th>发放单号</th>
+                    <th>产品名称</th>
+                    <th>发放类型</th>              
+                    <th>发放人</th>
+                    <th>发放时间</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for obj in page_obj %}
+                        <tr>
+                            <td class="text-center">{{ forloop.counter }}</td>                    
+                            <td>{{ obj.archive_no }}</td>
+                            <td>{{ obj.product }}</td>
+                            <td>{{ obj.stage }}</td>
+                            <td>{{ obj.designer }}</td>
+                            <td>{{ obj.add_time }}</td>
+                            <td><a href= "{% url 'archive:detail' obj.archive_id %}">查看详情</a></td>                
+                        </tr>
+                    {% endfor %}            
+                </tbody>
+            </table>        
+        </div>
+
+        <div class="pagination col-8 offset-2">
+            <span class="step-links">
+                {% if page_obj.has_previous %}
+                    <a href="{{ request.get_full_path }}&page=1">&laquo; 首页</a>
+                    <a href="{{ request.get_full_path }}&page={{ page_obj.previous_page_number }}">前一页</a>
+                {% endif %}
+
+                <span class="current">
+                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+                </span>
+
+                {% if page_obj.has_next %}
+                    <a href="{{ request.get_full_path }}&page={{ page_obj.next_page_number }}">下一页</a>
+                    <a href="{{ request.get_full_path }}&page={{ page_obj.paginator.num_pages }}">最后页 &raquo;</a>
+                {% endif %}
+            </span>
+        </div>
+    </div> <!-- /container -->
+    <script>
+        function f_search(tp){
+            
+            location.href = "{{ request.path }}?tp= $('#search').value";
+
+        }
+    </script>
+{% endblock %}

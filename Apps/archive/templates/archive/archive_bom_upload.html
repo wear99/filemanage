@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}文件上传{% endblock %}
+ 
+{% block content %}
+    <div class="container">
+        <div class="col-md-10 pt-2">            
+            <div class="table-responsive">
+                <table class="table table-striped table-sm">
+                    <thead>
+                        <tr>
+                            <th>发放单号</th>
+                            <th>产品名称</th>
+                            <th>发放类型</th>
+                            <th>发放时间</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>{{ obj.archive_no }}</td>
+                            <td>{{ obj.product }}</td>
+                            <td>{{ obj.stage }}</td>
+                            <td>{{ obj.add_time }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+          <form id='form' class='' action="/parts/uploadarchivebom/" method="post" enctype="multipart/form-data">
+                {% if msg %}
+                    <div class="alert alert-warning">{{ msg }}</div>
+                {% endif %}
+            {% csrf_token %}
+            <input type="text" name='archive_id' value={{ obj.archive_id }} style="display:none">
+            <div class="form-group row">
+                <label for=""> 请选择需要上传的发放清单</label>
+                <input class="col-md-8 form-control " type="file" name="bom" id="id_files"  required>
+                <input type="submit" value="Submit">提 交
+            </div>
+    </div> <!-- /container -->
+{% endblock %}

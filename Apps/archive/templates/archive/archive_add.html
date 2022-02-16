@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}文件发放{% endblock %}
+ 
+{% block content %}
+    <div class="container">
+        <h3 class="display-4"> 新申请单</h3>
+        <div class="py-2">
+          <form class='' action="" method="post">
+                {% if msg %}
+                    <div class="alert alert-warning">{{ msg }}</div>
+                {% endif %}
+                {% csrf_token %}
+                {% for field in form %}                
+                    <div class="form-group row">  
+                        <label for="{{ field.id_for_label }}" class="col-sm-2 col-form-label">
+                            {{ field.label }}
+                        </label> 
+                        <div class="col-sm-4">
+                            {{ field }}
+                        </div>
+                        <div class="">
+                            {{ field.errors }}
+                        </div>
+                                      
+                    </div>                
+                {% endfor %}            
+              <input type="submit" value="保存并上传图纸" class="btn btn-primary ">
+          </form>          
+        </div>
+    </div> <!-- /container -->
+{% endblock %}
+
+{% block custom-script %}
+    <script>         
+        $(document).ready(function() {
+            document.getElementById('id_add_time').valueAsDate = new Date();
+        });
+    </script> 
+{% endblock %}

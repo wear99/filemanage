@@ -1,0 +1,17 @@
+检查并创建迁移项
+
+python manage.py makemigrations
+
+执行迁移命令
+python manage.py migrate
+
+创建管理员
+python manage.py createsuperuser
+
+添加app
+先切换到apps目录
+cd apps
+python ../manage.py startapp 模块名
+
+
+python manage.py showmigrations

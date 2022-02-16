@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}申请单审批{% endblock %}
+{% block content %}
+    <div class="container-fluid">
+        <h3 class="display-4"> 申请单审批</h3>
+        <table class="table table-bordered table-sm ">
+                <thead>
+                    <tr>                          
+                        <th>申请单号</th>
+                        <th>产品名称</th>                                
+                        <th>申请人</th>
+                        <th>申请时间</th>                        
+                    </tr>
+                </thead>
+                <tbody>                    
+                    <tr>
+                        <td>{{ appobj.app_no }}</td>                        
+                        <td>{{ appobj.product }}</td>                        
+                        <td>{{ appobj.username }}</td>                        
+                        <td>{{ appobj.add_time }}</td>                        
+                    </tr>
+                    <tr>
+                        <th>申请原因</th>
+                        <td>{{ appobj.description }}</td>
+                    </tr>
+                    <tr>                        
+                        <td><a href= "{% url 'application:detail' appobj.app_id %}">查看详情 </a></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <table class="table text-center table-bordered table-sm">
+                <thead>
+                    <tr>
+                        <th scope="col" colspan='6' class='text-left' >审批信息</th>
+                    </tr>
+                    <tr>
+                        <th scope="col" style='width:40px'>#</th>
+                        <th scope="col" style='width:60pt'>节点</th>
+                        <th scope="col" style='width:60pt'>审核结果</th>
+                        <th scope="col" style='width:60pt'>审核人</th>
+                        <th scope="col" style='width:60pt'>审核日期</th>
+                        <th scope="col" style='width:60pt'>审核备注</th>
+                    </tr>
+                <tbody>
+                {% for log in task %}
+                    <tr class="text-center">
+                        <td class="text-center">{{ forloop.counter }}</td>
+                        <td>{{ log.step_name }}</td>
+                        {% if log.result %}
+                            <td > 通过 </td>
+                        {% else %}
+                            <td class='bg-warning text-dark'> 退回 </td>
+                        {% endif %}
+                        <td>{{ log.username }}</td>
+                        <td>{{ log.add_time }}</td>
+                        <td>{{ log.remark|default_if_none:'' }} </td>
+                    </tr>                
+                {% endfor %}
+                            
+                {% if obj.status.step < 10 %}
+                    <tr class="text-center">
+                        <td class="text-center" style="vertical-align: middle">
+                        {{ task|length|add:1 }}</td>                        
+                        {% if obj.status.username == request.user.username %}
+                            <form id='form' class="col-12" action="" method="post">
+                                {% csrf_token %}
+                                <input type="text" name='app_id' style="display:none" value={{ appobj.app_id }}>
+                            <td class="text-center" style="vertical-align: middle">{{ obj.status.step_name }}</td>                           
+                            <td colspan=3>
+                                <div class="btn-group btn-group-toggle btn-block py-3" data-toggle="buttons">
+                                    <label class="btn btn-outline-primary active">
+                                        <input type="radio" name="result" id="option1" value='1' autocomplete="off" checked> 通过
+                                    </label>
+                                    <label class="btn btn-outline-warning">
+                                        <input type="radio" name="result" id="option2" value='0' autocomplete="off"> 退回
+                                    </label>
+                                </div>                           
+                                <input type="text" class="form-control" placeholder="审核备注" name='remark'>
+                            </td>
+                        
+                            <td style="vertical-align: middle">
+                                <button type="submit" id='findfile' class="btn btn-primary btn-block ">提交</button>
+                            </td>
+                            
+                            </tr>                                      
+                            </form>
+                        {% else %}
+                            <td class="bg-primary">待{{ obj.status.step_name }}</td>
+                            <td> </td>
+                            <td> {{ obj.status.username|default_if_none:obj.username }}</td>
+                            </tr>  
+                        {% endif %}
+                {% endif %}
+                </tbody>
+                </table>
+            </div>
+        </div>
+    </div> <!-- /container -->
+{% endblock %}
+{% block custom-script %}
+    <script>
+        $(".tag-checkbox").toggleClass("btn-default").toggleClass("btn-success");
+    </script>
+{% endblock %}

@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}文件上传{% endblock %}
+ 
+{% block content %}
+    <div class="container">
+        <div class="col-md-10 ">
+            <span> &nbsp  </span>
+            <div class="table-responsive">
+                <table class="table table-striped table-sm">
+                    <thead>
+                        <tr>
+                            <th>发放单号</th>
+                            <th>产品名称</th>
+                            <th>发放类型</th>
+                            <th>发放时间</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>{{ obj.archive_no }}</td>
+                            <td>{{ obj.product }}</td>
+                            <td>{{ obj.stage }}</td>
+                            <td>{{ obj.add_time }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+          <form id='form' class='' action="" method="post" enctype="multipart/form-data">
+            {% if msg %}
+                <div class="alert alert-warning">{{ msg }}</div>
+            {% endif %}
+            {% csrf_token %}   
+            <input name="archive_id" style="display: none;" value="{{ obj.archive_id }}"/>
+            <label for=""> 请选择需要上传的文件</label>
+            <div class="form-group row">
+                <input class="col-md-8 form-control " type="file" name="files" id="id_files" onchange='fileselect();' multiple required>
+                
+                <button type="button" id="uploadbtn" class="btn btn-md btn-primary  col-md-3 offset-1"> 上传文件
+                </button>                
+            </div>            
+            <div id=fileInfo></div>
+            <div id='progressText'></div> 
+            <progress class="col-md-12" max='100' value="0" id='progress' hidden></progress>   
+            <progress class="progress-bar" max='100' value="0" id='progress' hidden></progress>            
+          </form>
+        <div>
+            <table id="id_filelist" class="table table-striped table-sm">
+                <caption>文件列表</caption>
+            </table>
+        </div>
+
+    </div> <!-- /container -->    
+{% endblock %}
+
+{% block custom-script %}
+<script>
+    function fileselect() {
+        $("#id_filelist  tr").html("");
+
+        var myfiles = document.getElementById("id_files").files;
+        var file_len = myfiles.length;
+
+        var fsize = 0;
+        var tab = document.getElementById("id_filelist")
+        for (var i = 0; i < file_len; i++) {
+            var tr = document.createElement('tr');
+            tab.appendChild(tr);
+
+            var f = document.createElement('td');
+            tr.appendChild(f);
+            f.innerHTML = i + 1
+
+            var f1 = document.createElement('td');
+            tr.appendChild(f1);
+            f1.innerHTML = myfiles[i].name
+            fsize += myfiles[i].size
+            //4，创建有删除二字的单元格
+            var td = document.createElement("td");
+            tr.appendChild(td);
+            td.innerHTML = "<a href='javascript:;'>删除</a>";
+        }
+        document.getElementById('fileInfo').innerHTML = '选择' + file_len + '个文件, ' + (Math.round(fsize * 100 / (1024 * 1024)) / 100).toString() + 'MB;';
+
+        //5,删除操作
+        var as = document.querySelectorAll("a");
+        for (var i = 0; i < as.length; i++) {
+            as[i].onclick = function () {  //点击a 删除 当前a 所在的行（a链接的爸爸的爸爸）
+                tab.removeChild(this.parentNode.parentNode);
+                delete myfiles[i]
+                document.getElementById("id_files").files = myfiles
+            }
+        }
+    }
+</script>
+<script>
+    $("#uploadbtn").click(function (){
+        f = new FormData(document.getElementById('form')),
+        document.getElementById('progress').hidden = false,
+        $.ajax({
+            url: '/files/uploadfile_archive/',
+            method: 'post',
+            data: f,
+            processData: false,
+            contentType: false,
+            xhr: function xhr() {
+                //获取原生的xhr对象
+                var xhr = $.ajaxSettings.xhr();
+                if (xhr.upload) {
+                    //添加 progress 事件监听
+                    xhr.upload.addEventListener('progress', function (e) {
+                        //e.loaded 已上传文件字节数
+                        //e.total 文件总字节数
+                        var per = parseInt(e.loaded * 100 / e.total);
+                        document.getElementById('progressText').innerHTML = per.toString() + '%';
+                        $("#progress").html(per)
+                    }, false);
+                }
+                return xhr;
+            },
+            success: function (res) {
+                alert(res);
+                setTimeout(function(){
+                    window.location.href ="{% url 'files:filefind' %}?search={{ obj.archive_id }}&tp=archive_id"
+                },3000);
+            }
+        
+        })
+    })
+
+</script>
+{% endblock %}

@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}注册{% endblock %}
+ 
+{% block content %}
+    <div class="container">
+        <div class="col-md-10 ">
+            <span> &nbsp  </span>
+          <form class='' action="/users/register/" method="post">
+                {% if msg %}
+                    <div class="alert alert-warning">{{ msg }}</div>
+                {% endif %}
+                {% csrf_token %}
+                {% for field in form %}                
+                    <div class="form-group row">  
+                        <label for="{{ field.id_for_label }}" class="col-sm-2 col-form-label">
+                            {{ field.label }}
+                        </label> 
+                        <div class="col-sm-4">
+                            {{ field }}
+                        </div>
+                        <div class="">
+                            {{ field.errors }}
+                        </div>
+                                      
+                    </div>                
+                {% endfor %}
+              <input type="submit" value="Submit">
+          </form>          
+        </div>
+    </div> <!-- /container -->
+{% endblock %}

@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}文档发放{% endblock %}
+
+{% block content %}
+        <div class="container-fluid">
+        <h3 class="display-4"> 发放单详情</h3> 
+        <div class="col-md-8 offset-2 py-3">            
+            <table class="table table-bordered table-hover">
+                <tbody>
+                    <tr>
+                        <th scope="row" class="col-3">发放单号</th>
+                        <td>{{ obj.archive_no }}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">产品名称</th>
+                        <td>{{ obj.product }}</td>
+
+                    </tr>
+                    <tr>
+                        <th scope="row">类型</th>
+                        <td >{{ obj.stage }}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">输出图纸</th>
+                        <td >                            
+                            {% if draw_num > 0 %}
+                                 <a href="{% url 'archive:filelist' obj.archive_id %}">{{ draw_num }} 查看图纸</a>
+                            {% else %}
+                                <p class="text-secondary px-1">无</p>
+                            {% endif %} 
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row">输出清单</th>
+                        <td >{% if obj.bom %}
+                                <a href="{% url 'archive:bomlist' obj.archive_id %}">查看BOM</a>
+                            {% else %}
+                                <p class="text-secondary px-1">无</p>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr height='120px'>
+                        <th scope="row" >发放说明</th>
+                        <td > {{ obj.description }}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">发放人</th>
+                        <td>{{ obj.designer }}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">发放时间</th>
+                        <td>{{ obj.add_time }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div> <!-- /container -->
+    <form>
+        {% csrf_token %}
+    </form>
+{% endblock %}

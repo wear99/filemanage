@@ -1,0 +1,214 @@
+{% load static %}
+ 
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- 上述3个meta标签*必须*放在最前面，任何其他内容都*必须*跟随其后！ -->
+    <title>{% block title %}base{% endblock %}</title> 
+    <!-- Bootstrap -->
+    <link href="{% static 'bootstrap-4.6.0-dist/css/bootstrap.min.css' %}" rel="stylesheet">
+    {% block css %}{% endblock %}
+    <style type="text/css">
+      html,
+      body {
+        height: 100%;
+      }
+    </style>
+  </head>
+  <body>   
+    <nav class="navbar navbar-expand-sm navbar-light bg-primary">
+      <a class="navbar-brand" href="/">
+      <img src="/static/images/logo2.png" width="180" height="30" class="d-inline-block align-top" alt="">    
+      </a>
+      <div class="collapse navbar-collapse" id="navbarsExample03">
+        <ul class="navbar-nav mr-auto">        
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="dropdown03" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">文件发放</a>
+            <div class="dropdown-menu" aria-labelledby="dropdown03">
+              <a class="dropdown-item" href={% url 'archive:new' %}> 新 建</a>
+              <a class="dropdown-item" href={% url 'archive:search' %}> 查看发放单</a>            
+              <a class="dropdown-item" href="#">Something else</a>
+            </div>
+          </li>
+
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="dropdown03" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">文件申请</a>
+            <div class="dropdown-menu" aria-labelledby="dropdown03">
+              <a class="dropdown-item" href={% url 'application:new' %}> 新 建</a>
+              <a class="dropdown-item" href={% url 'application:list' %}> 查看所有</a>
+              <a class="dropdown-item" href="#">Something else</a>
+            </div>
+          </li>
+
+          <li class="nav-item">
+            <a class="nav-link" href={% url 'parts:partfind' %}>查询物料</a>
+          </li>        
+          <li class="nav-item">
+            <a class="nav-link" href={% url 'files:filefind' %}>查询文件</a>
+          </li>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="dropdown03" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">工具</a>
+            <div class="dropdown-menu" aria-labelledby="dropdown03">
+              <a class="dropdown-item" href={% url 'tools:checkcode' %}>检查编码</a>            
+              <a class="dropdown-item" href="#">Something else</a>
+            </div>
+          </li>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="dropdown03" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">导入</a>
+            <div class="dropdown-menu" aria-labelledby="dropdown03">
+              <a class="dropdown-item" href={% url 'parts:uploadpart' %}>导入物料库</a>
+              <a class="dropdown-item" href={% url 'parts:uploaderpbom' %}>导入ERP-bom</a>
+              <a class="dropdown-item" href={% url 'parts:uploadcost' %}>导入成本表</a>            
+              <a class="dropdown-item" href="#">Something else</a>
+            </div>
+          </li>
+
+          <li class="nav-item">
+            <a class="nav-link" href="/admin/" %}>后台管理</a>
+          </li>
+                  
+          <li class="nav-item">
+            <a class="nav-link disabled" href="#" tabindex="-1" aria-disabled="true">Disabled</a>
+          </li>
+          
+        </ul>
+          <ul class="nav navbar-nav navbar-right">
+          {% if request.user.is_authenticated %}        
+            <li class='row'>
+            <a class="nav-link" href= {% url 'users:userinfo' %} >欢迎回来&nbsp {{ request.user.username }}&nbsp </a>
+            
+            <a class="nav-link" href= {% url 'users:logout' %} class="text-secondary"> 登 出 </a>
+            </li>
+                
+          {% else %}
+            <li class="nav-item" ><a class="nav-link" href={% url 'users:login' %}>登 录&nbsp&nbsp</a></li>
+          {% endif %}
+          </ul>
+      </div>
+      </nav>  
+    <!--Django 消息框架，必须在下次request的时候才提升 --> 
+
+    {% if messages %}
+        <script>
+            {% for msg in messages %}
+                alert('{{ msg.message }}');
+            {% endfor %}
+        </script>
+    {% endif %}
+
+  <div class="container-fluid" style="height: 90%;">
+    <div class="row" style="height: 100%;">
+      <div class="accordion bg-secondary" id="accordionExample"  style="width: 8%;height: 100%;">
+        <div class="card bg-secondary">
+          <div class="card-header" id="headingOne" style="padding-left:4px;padding-right:4px;">
+            <a class="btn btn-block text-white" type="button" data-toggle="collapse" data-target="#collapse_search" aria-expanded="true" aria-controls="collapse_search" style="padding:0px ;">
+              查 询
+          </a>
+          </div>
+        
+          <div id="collapse_search" class="collapse bg-light" aria-labelledby="headingOne" data-parent="#accordionExample">
+            <div class="card-body" style="padding-left:4px;padding-right:4px;">
+              <a class="dropdown-item text-center"  href="/parts/partfind/">物  料</a>              
+              <a class="dropdown-item text-center"  href="/files/filefind/">图  纸</a>
+              <a class="dropdown-item text-center"  href="/parts/bomfind/">设计Bom</a> 
+              <a class="dropdown-item text-center"  href="/files/erpbomfind/">Erp-Bom</a>                
+            </div>
+          </div>
+        </div>
+
+        <div class="card bg-secondary">
+          <div class="card-header" id="headingOne" style="padding-left:4px;padding-right:4px;">        
+              <a class="btn btn-block text-white" type="button" data-toggle="collapse" data-target="#collapse_ar" aria-expanded="false" aria-controls="collapse_ar">
+                发 放
+              </a>        
+          </div>
+
+          <div id="collapse_ar" class="collapse  bg-light" aria-labelledby="headingOne" data-parent="#accordionExample">
+            <div class="card-body" style="padding-left:4px;padding-right:4px;">
+              <a class="dropdown-item text-center" href="/archive/new/"> 新建</a>
+              <a class="dropdown-item text-center" href="/archive/search/">查看</a>         
+            </div>
+          </div>
+        </div>
+
+        <div class="card bg-secondary">
+          <div class="card-header" id="headingOne" style="padding-left:4px;padding-right:4px;">
+            <a class="btn btn-block text-white" type="button" data-toggle="collapse" data-target="#collapse_app"
+              aria-expanded="false" aria-controls="collapse_app">
+              申 请
+          </a>
+          </div>
+        
+          <div id="collapse_app" class="collapse bg-light" aria-labelledby="headingOne" data-parent="#accordionExample">
+            <div class="card-body" style="padding-left:4px;padding-right:4px;">
+              <a class="dropdown-item text-center" href="/application/new/">新建</a>
+              <a class="dropdown-item text-center" href="/application/list/">查看</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="card bg-secondary">
+          <div class="card-header" id="headingOne" style="padding-left:4px;padding-right:4px;">        
+              <a class="btn btn-block text-white" type="button" data-toggle="collapse" data-target="#collapse_tool" aria-expanded="false" aria-controls="collapseOne">
+                工 具
+              </a>        
+          </div>
+
+          <div id="collapse_tool" class="collapse bg-light" aria-labelledby="headingOne" data-parent="#accordionExample">
+            <div class="card-body" style="padding-left:4px;padding-right:4px;">
+              <a class="dropdown-item text-center" style="padding-left:4px;padding-right:4px;" href="/parts/uploadpart/">导入物料</a>
+              <a class="dropdown-item text-center" style="padding-left:4px;padding-right:4px;" href="/parts/uploaderpbom/">导入bom</a>
+              <a class="dropdown-item text-center" style="padding-left:4px;padding-right:4px;"  href="/parts/uploadcost/">导入成本</a>            
+            </div>
+          </div>
+        </div>
+
+        <div class="card bg-secondary">
+          <div class="card-header" id="headingOne" style="padding-left:4px;padding-right:4px;">
+            <a class="btn btn-block text-white" type="button" href="/admin/"
+              >
+              后 台
+          </a>
+          </div>          
+        </div> 
+        
+        <div class="card bg-secondary">
+          <div class="card-header" id="headingOne" style="padding-left:4px;padding-right:4px;">
+
+            <a class="btn btn-block text-white" type="button" data-toggle="collapse" data-target="#collapse_user"
+              aria-expanded="false" aria-controls="collapseOne">
+              {% if request.user.is_authenticated %}
+                  {{ request.user.username }}
+              {% else %}
+                  登 录
+              {% endif %}              
+            </a>
+          </div>
+        
+          <div id="collapse_user" class="collapse bg-light" aria-labelledby="headingOne" data-parent="#accordionExample">
+            <div class="card-body" style="padding-left:4px;padding-right:4px;">
+              <a class="dropdown-item text-center" style="padding-left:4px;padding-right:4px;"
+                href="/users/userinfo/">用户信息</a>
+            </div>
+          </div>
+        </div>
+        
+      </div> <!--侧边栏-->
+      <div style="width: 92%;" class="p-2">
+          {% block content %}      {% endblock %}
+      </div> 
+    </div> <!--row-->
+  </div> <!--页面框架-->
+
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="{% static 'jquery/jquery-3.6.0.min.js' %}"></script>
+    <!-- Include all compiled plugins (below), or include individual files as needed -->
+    
+    <script type="text/javascript" src="{% static 'bootstrap-4.6.0-dist/js/popper.min.js' %}"></script>
+    <script src="{% static 'bootstrap-4.6.0-dist/js/bootstrap.min.js' %}"></script>
+    {% block custom-script %}{% endblock %}
+  </body>
+</html>

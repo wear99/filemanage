@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+{% load static %}
+
+
+{% block title %}物料查询{% endblock %}
+<!--显示filefiled文件：{{ pic.file.url }} -->
+{% block content %}
+<div class="container">
+    <div class="col-md-12 pt-3 ">
+        <form id='form' class="" action="" method="get">
+            {% csrf_token %}
+            <div class="row">
+                <div class="col-md-2">
+                    {{ form.tp }}
+                </div>   
+                <div class="col-md-6"> 
+                    {{ form.search }}
+                </div>
+                
+                <div class="col-md-2"> 
+                    <button type="submit" id='findfile' class="btn btn-primary btn-block">查 找</button>
+                </div>
+            </div>
+            <div class="row col-6 offset-4 pt-2">
+                <div class="col"> 
+                    {{ form.ch }}
+                    含子零件
+                </div>                
+                <div class="col"> 
+                    {{ form.has }}
+                    有图纸
+                </div>
+                <div class="col"> 
+                    {{ form.vd }}
+                    图纸有效
+                </div>
+            </div>
+
+        </form>
+        <div class='py-3'>
+        {% if page_obj %}
+            <table id="id_filelist" class=class="table table-striped table-bordered table-sm ">
+        <thead class='table-primary'>
+            <tr>
+                <th scope="col">序号</th>                
+                <th scope="col">编码</th>
+                <th scope="col">图号</th>
+                <th scope="col">名称</th>
+                {% if is_bom %}
+                    <th scope="col">数量</th>
+                    <th scope="col">部件合计</th>
+                {% endif %}
+                <th scope="col">材料</th>
+                <th scope="col">备注</th>
+                <th scope="col">分工</th>
+                <th scope="col">发放部门</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for obj in page_obj %}
+        <tr>
+            {% if is_bom %}
+                <td>{{ obj.sn }}</td>
+                {% ifequal obj.part.code obj.part.draw|add:obj.part.name %}
+                    <td> </td>
+                {% else %}
+                    <td>{{ obj.part.code }}</td>
+                {% endifequal %}
+
+                <td>{{ obj.part.draw }}</td>
+                <td>{{ obj.part.name }}</td>
+                <td>{{ obj.quantity }}</td>
+                <td>{{ obj.total }}</td>
+                <td>{{ obj.part.material }}</td>
+                <td>{{ obj.part.remark }}</td>
+                <td>{{ obj.part.division }}</td>
+                <td>{{ obj.part.output }}</td>
+                {% if obj.part.file %}
+                    <td><a href={% url 'files:view' obj.part.file.fileno %} target="_balnk">查看</a></td>                    
+                {% endif %} 
+            {% else %}
+                    <td>{{ forloop.counter }}</td>
+                {% ifequal obj.code obj.draw|add:obj.name %}
+                    <td> </td>
+                {% else %}
+                    <td>{{ obj.code }}</td>
+                {% endifequal %}                    
+                <td>{{ obj.draw }}</td>
+                <td>{{ obj.name }}</td>
+                <td>{{ obj.material }}</td>
+                <td>{{ obj.remark }}</td>
+                <td>{{ obj.division }}</td>
+                <td>{{ obj.output }}</td>
+                {% if obj.file %}
+                    <td><a href={% url 'files:view' obj.file.fileno %} target="_balnk">查看</a></td>
+                {% endif %} 
+            {% endif %}  
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table> 
+        {% endif %} 
+        </div>          
+        </div>
+        <div class="pagination">
+            <span class="step-links">
+                {% if page_obj.has_previous %}
+                <a href={{ request.get_full_path }}&page=1>&laquo; 首页</a>
+                <a href={{ request.get_full_path }}&page={{ page_obj.previous_page_number }}>previous</a>
+                {% endif %}
+        
+                <span class="current">
+                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+                </span>
+        
+                {% if page_obj.has_next %}
+                <a href={{ request.get_full_path }}&page={{ page_obj.next_page_number }}>下一页</a>
+                <a href={{ request.get_full_path }}&page={{ page_obj.paginator.num_pages }}>最后页 &raquo;</a>
+                {% endif %}
+            </span>
+        </div>
+    </div> <!-- /container -->    
+{% endblock %}
+
+{% block custom-script %}
+    <script>
+        $(document).ready(function (){
+            $('#id_tp').val("{{ tp }}")        
+            })
+         </script>
+{% endblock %}

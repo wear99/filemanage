@@ -1,0 +1,4 @@
+前端页面之间传递参数：
+1. url地址中带参数
+2. sessionStorage.search=bom_search;   另一个页面中再取出 sessionStorage.getItem("search")
+3. cookie，需要cookie插件

@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}发放单-编辑{% endblock %}
+ 
+{% block content %}
+    <h4 class="display-4"> 发放单-编辑</h3>
+    <div class="container">
+        <div class="col-md-10 pt-2 offset-1">
+          <form class='' action="" method="post">
+                {% if msg %}
+                    <div class="alert alert-warning">{{ msg }}</div>
+                {% endif %}
+                {% csrf_token %}
+                <input name="archive_id" style="display: none;" value="{{ obj.archive_id }}"/>
+                {% for field in form %}
+                    <div class="form-group row">
+                        <label for="{{ field.id_for_label }}" class="col-md-3 col-form-label">
+                            {{ field.label }}
+                        </label>
+                        <div class="col-md-6">
+                            {{ field }}
+                        </div>
+                        <div class="bg-warning text-dark">
+                            {{ field.errors }}
+                        </div>                                      
+                    </div>
+                {% endfor %}
+            <div> 
+                <button type="submit" class="btn btn-md btn-primary col-md-3 ">保 存</button>
+                {% if can_upfile %}
+                    <a class="btn btn-md btn-secondary col-md-3 " href={% url 'archive:fileupload' obj.archive_id %}> 上传图纸</a>
+                {% else %}
+                    <button title="只有发放人才可以上传图纸" class="btn btn-md btn-secondary col-md-3 " disabled>上传图纸</button>
+                {% endif %}
+                {% if can_upbom %}
+                    <a href={% url 'archive:bomupload' obj.archive_id %} class="btn btn-md btn-secondary col-md-3 ">上传工艺清单</button></a>
+                {% else %}
+                    <button title="只有工艺才可以上传工艺bom" class="btn btn-md btn-secondary col-md-3 " disabled>上传工艺清单</button>
+                {% endif %}
+                  
+          </div>
+          </form>          
+        </div>
+    </div> <!-- /container -->
+{% endblock %}
+
+{% block custom-script %}
+    <script>
+        
+    </script>
+{% endblock %}

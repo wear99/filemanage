@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}登录{% endblock %}
+{% block css %}
+<link rel="stylesheet" href="{% static 'css/login.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  <!-- col-md-4  :在布局中页面被分为12列，这个组件宽度展4列--；md是指中等显示桌面>
+  <!-- offset-4  :组件向右偏移4列-->
+  <div class="col-md-4 offset-4">
+  <h1 class="display-4 pt-4 text-center">欢迎登录</h1>
+    <form class="form-signin pt-4" action="" method="post">
+      {% if msg %}
+        <div class="alert alert-warning">{{ msg }}</div>
+      {% endif %}
+      {% csrf_token %}
+      
+      <div class="form-group">
+        <div class="form-group row">
+            <label for="id_username" class="sr-only">用户名：</label>
+            {{ form.username }}
+        </div>
+        <div class="form-group row pt-2">
+            <label for="id_password" class="sr-only">密码：</label>
+            {{ form.password }}            
+        </div>
+        <div class="checkbox mb-3 pt-2">
+            {{ form.remember_me }}
+            <label for="id_remember_me">记住我</label>
+        </div>
+        <p>
+            <button type="submit" class="btn btn-md btn-primary btn-block">提 交</button>
+        </p>
+        <p>
+            <a href={% url 'users:register' %}><button type="btn" class="btn btn-md btn-block">注 册</button></a>
+        </p>
+        <p class="mt-5 mb-3 text-muted">&copy; 2017-2021</p>
+    
+    </form>  
+    </div>
+    </div> <!-- /container -->
+{% endblock %}

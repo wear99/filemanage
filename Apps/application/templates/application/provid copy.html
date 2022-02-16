@@ -1,0 +1,225 @@
+{% extends 'base.html' %}
+
+{% block title %}文件发放{% endblock %}
+
+{% block content %}
+    <div class="container-fluid row">
+        <div class='col-12'>
+            <h3 class="display-4"> 发放文件</h3>            
+        </div>        
+        <div class="col-5 border border-dark">            
+            <table class="table table-bordered table-sm mb-0">
+                <tbody>
+                    <tr>
+                        <th scope="col" colspan='6' class='text-center' ><h3 class="display-5"> 图纸申请单</h3></th>
+                    </tr>
+                    <tr>
+                        <th scope="row" class="col-2">申请单号</th>
+                        <td>{{ obj.appno }}</td>
+                        
+                        <th scope="row">申请人</th>
+                        <td>{{ obj.username }}</td>
+                    </tr>
+                    <tr>  
+                    <th scope="row">产品名称</th>
+                        <td>{{ obj.product }}</td> 
+                    </tr>               
+                </tbody>
+            </table>
+            <table class="table text-center table-bordered table-sm mt-0" id='id_applist'>
+                <thead>
+                    <tr>
+                        <th scope="col" colspan='4' class='text-left' >申请图纸明细</th>
+                    </tr>
+                    <tr>
+                        <td scope="col" style='width:20pt'>#</td>                        
+                        <td scope="col" style='width:60pt'>图号</td>
+                        <td scope="col" style='width:60pt'>名称</td>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in appfile %}
+                        <tr class="text-center">
+                            <td class="text-center">{{ forloop.counter }}</td>                            
+                            <td>{{ item.draw }}</td>
+                            <td>{{ item.name }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>                            
+            </table> 
+            <div class="col-md-4"> 
+                
+            </div>
+            <table class="table text-center table-bordered table-sm table-striped" id='provid_table'>
+                <thead>
+                    <tr>                       
+                        <th scope="col" colspan='2' class='text-left'>发放图纸列表 </th>                            
+                        <td colspan='2'>
+                            <button class="btn btn-primary btn-block" onclick='saveprovid();'>保存</button>
+                        </td>                                                
+                    </tr>
+                    <tr>                        
+                        <th scope="col" >文件号</th>                        
+                        <th scope="col" >图号</th> 
+                        <th scope="col" >状态</th> 
+                        <th scope="col" >操作</th> 
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for obj in fileobj %}
+                    <tr>
+                        <td> {{ obj.fileno }} </td>
+                        <td> {{ obj.name }} </td>
+                        <td> {{ obj.valid }} </td>
+                        <td><button class="btn btn-sm" onclick="deltablerow(this);">删除</button></td>
+
+                    </tr>
+                    {% endfor %}
+                </tbody>                            
+            </table> 
+            
+            <form id='provid_form' class="" action="" method="post">
+                {% csrf_token %}
+                <input type="text" name='appno' style="display:none" value={{ obj.appno }}>
+                <input type="text" name='providlist' id='providlist' style="display:none">
+            </form>
+
+        </div>
+        <div class="col-7 border border-dark">
+            <h3 class="display-5 py-3"> 文件查询</h3>
+            <form id='form'>
+            {% csrf_token %}
+            <div class="row">
+                <div class="col-md-2">
+                    {{ form.tp }}
+                </div>   
+                <div class="col-md-6"> 
+                    {{ form.search }}
+                </div>
+                <div class="col-md-2">
+                    <button type="button" class="btn btn-primary btn-block" onclick='filefind();'>查 找</button>
+                </div>
+            </div>
+            <div class="row col-6 offset-2 pt-2">
+                <div class="col"> 
+                    {{ form.ch }}
+                    含子零件
+                </div>
+                <div class="col"> 
+                    {{ form.has }}
+                    有图纸
+                </div>
+                <div class="col"> 
+                    {{ form.vd }}
+                    有效
+                </div>
+            </div>            
+            </form>
+        
+            <div>
+            <table id="id_findlist" class="table table-hover table-bordered table-sm ">
+                <thead class='table-primary'>
+                    <tr>
+                        <th scope="col">序号</th>                
+                        <th scope="col">编码</th>
+                        <th scope="col">图号</th>
+                        <th scope="col">名称</th>                        
+                        <th scope="col">分工</th>
+                        <th scope="col">发放部门</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    
+                </tbody>
+            </table> 
+            </div>
+            <div>
+                <nav aria-label="Page navigation example">
+                    <ul class="pagination" id='pagenumber'>
+                                        
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div> <!-- /container -->
+
+    <script>
+        //删除表格的行
+        function deltablerow(obj){
+            obj.parentNode.parentNode.parentNode.removeChild(obj.parentNode.parentNode);
+        }
+        function addprovidlist(val){                      
+            //获取出发元素(按钮) 的父项(td)的父项(tr)
+            var value = $(val).parent().parent().find("td"); 
+            //获取当前provid文件列表
+            var provid=getprovid(); 
+            //判断是否已存在 
+            var number=provid.indexOf(value.eq(2).text())
+            if (number > -1){
+                alert('已在列表中')
+                return
+            }   
+
+            var tab = document.getElementById("provid_table")
+            var tr = document.createElement('tr');
+            tab.appendChild(tr);        
+
+            var f = document.createElement('td');
+            tr.appendChild(f);
+            f.innerHTML = value.eq(2).text();
+
+            var f = document.createElement('td');
+            tr.appendChild(f);
+            f.innerHTML = value.eq(3).text();
+
+            var f = document.createElement('td');
+            tr.appendChild(f);
+            f.innerHTML = value.eq(6).text();
+
+            var f = document.createElement('td');
+            tr.appendChild(f);
+            f.innerHTML = "<a href='javascript:;'>删除</a>";
+
+            //5,删除操作
+            var as = document.querySelectorAll("a");
+            for (var i = 0; i < as.length; i++) {
+                as[i].onclick = function () {  //点击a 删除 当前a 所在的行（a链接的爸爸的爸爸）
+                    tab.removeChild(this.parentNode.parentNode);                   
+                }
+            }
+        }
+
+        function getprovid(){
+            //便于多次保存，采用ajax提交
+            var tab = document.getElementById("provid_table");
+            var rows = tab.rows;
+            if (rows.length < 3){
+                return ''
+            }
+            var files=[];
+            for (var i = 2; i < rows.length; i++) { //遍历表格的行 
+                
+                files.push(rows[i].cells[0].innerHTML);                
+               
+                }            
+            return JSON.stringify(files)           
+        }
+
+        function saveprovid(){
+            //var pl=getprovid();
+            document.getElementById("providlist").value=getprovid();
+            f=new FormData(document.getElementById('provid_form')),            
+            $.ajax({
+                
+                method:'post',
+                data: f,
+                processData:false,
+                contentType:false,
+                success:function(data){
+                    alert(data.msg)
+                }
+            })
+        }
+    </script>
+
+{% endblock %}
