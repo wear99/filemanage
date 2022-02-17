@@ -89,3 +89,24 @@ class Archive(models.Model):
 
         return item
 
+
+# 查找发放单模型，返回Obj
+def get_archive_model(search, type):
+    if search == 'ALL':
+        q = Archive.objects.all()
+    elif type == 'ARCHIVE_NO':
+        q = Archive.objects.filter(archive_no__icontains=search)
+    elif type == 'ARCHIVE_ID':
+        q = Archive.objects.filter(archive_id__=search)
+    elif type == 'PRODUCT_CODE':
+        q = Archive.objects.filter(product__product_code__icontains=search)
+    elif type == 'PRODUCT_NAME':
+        q = Archive.objects.filter(product__product_name__icontains=search)
+    elif type == 'USERNAME':
+        q = Archive.objects.filter(username=search)
+    elif type == 'DESC':
+        q = Archive.objects.filter(description__icontains=search)
+    else:
+        q = []
+
+    return q

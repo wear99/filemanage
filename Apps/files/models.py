@@ -100,3 +100,37 @@ class Filelog(models.Model):
 
     def __str__(self):
         return self.type
+
+
+def get_ssfile_model(search, type):
+    '当search为列表时用In查询，否则用包含查询'
+
+    q = ssFile.objects.all()
+    if isinstance(search, list):
+        if type == 'DRAW':
+            q = q.filter(filename__in=search)
+        elif type == 'ARCHIVE_ID':
+            q = q.filter(archive__in=search)
+        elif type == 'FILE_ID':
+            q = q.filter(file_id__in=search)
+    else:
+        if type == 'DRAW':
+            q = q.filter(filename__icontains=search)
+        elif type == 'PRODUCT':
+            q = q.filter(product__icontains=search)
+        elif type == 'USERNAME':
+            q = q.filter(username=search)
+        elif type == 'ARCHIVE_ID':
+            q = q.filter(archive=search)
+        else:
+            return []
+
+    return q
+
+
+def LogFile(obj, tp, username):
+    # 记录log
+    new = Filelog(file_id=obj.file_id, filename=obj.filename,
+                  username=username)
+    new.type = tp
+    new.save()

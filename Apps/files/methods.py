@@ -1,46 +1,14 @@
 # 处理方法
-from .models import ssFile, Filelog
-from parts.update import part_file,all_code
-from parts.search import Partfind_dict,childfind_current
+from .models import ssFile,get_ssfile_model
+
 from django.utils import timezone
 from django.db.models import Q
 import os,zipfile,zipstream
 import threading
+
+from parts.update import part_file, all_code
+from parts.search import Partfind_dict, childfind_current
 from files.pdfhander import files_add_mark
-
-
-def LogFile(obj, tp, username):
-    # 记录log
-    new = Filelog(file_id=obj.file_id, filename=obj.filename,
-                  username=username)
-    new.type = tp
-    new.save()
-
-
-def get_ssfile_model(search,type):
-    '当search为列表时用In查询，否则用包含查询'
-
-    q=ssFile.objects.all()
-    if isinstance(search,list):
-        if type == 'DRAW':
-            q = q.filter(filename__in=search)
-        elif type == 'ARCHIVE_ID':
-            q = q.filter(archive__in=search)
-        elif type=='FILE_ID':
-            q=q.filter(file_id__in=search)
-    else:
-        if type == 'DRAW':
-            q = q.filter(filename__icontains=search)
-        elif type == 'PRODUCT':
-            q = q.filter(product__icontains=search)
-        elif type == 'USERNAME':
-            q = q.filter(username=search)
-        elif type == 'ARCHIVE_ID':
-            q = q.filter(archive=search)
-        else:
-            return []
-
-    return q
 
 
 # 把已存在的同名文件,按日期排序,只保留最新的，其余设为 失效0；
