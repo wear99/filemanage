@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}导入{% endblock %}
+ 
+{% block content %}
+    <div class="container">
+        <div class="col-md-10 pt-2"> 
+        <h3 class="display-4">{{ title }}</h3>
+        
+        
+        模板        
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    {% for item in col %}
+                        <th>{{ item }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>            
+        </table> 
+
+          
+          <form id='form'  method="post" action="" enctype="multipart/form-data">
+                {% if msg %}
+                    <div class="alert alert-warning">{{ msg }}</div>
+                {% endif %}
+            {% csrf_token %}  
+            <div class="form-group py-3">                
+                <input class="col-md-6 form-control" type="file" name="file" id="id_file" required>
+               
+                <label class="col-form-label pt-5" for="add_time">选择导入数据日期</label>                
+                <input type="date" class="col-md-3 form-control" name="add_time" id="add_time" required>                
+                
+
+            </div> 
+            <input type="text" name="filetype" value="{{ filetype }}" style="display: none;">
+            <input type="submit" value="上传文件" class="btn btn-primary py-3 ">
+            
+          </form>  
+        </div>        
+
+    </div> <!-- /container -->
+{% endblock %}
+
+{% block custom-script %}
+    <script>         
+        $(document).ready(function() {
+            document.getElementById('add_time').valueAsDate = new Date();
+        });
+    </script> 
+{% endblock %}

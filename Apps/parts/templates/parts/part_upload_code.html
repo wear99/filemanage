@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}物料库上传{% endblock %}
+ 
+{% block content %}
+    <div class="container">
+        <div class="col-md-10 pt-2"> 
+        <h3 class="display-4"> 物料库更新</h3>            
+          <form id='form'  method="post" enctype="multipart/form-data">
+                {% if msg %}
+                    <div class="alert alert-warning">{{ msg }}</div>
+                {% endif %}
+            {% csrf_token %}  
+            <div class="form-group">  
+                <input class="col-md-8 form-control " type="file" name="codefile" id="id_codefile" required>
+                {{ form.codefile }}
+            </div> 
+            <input type="submit" value="上传图纸" class="btn btn-primary ">
+            
+          </form>  
+        </div>        
+
+    </div> <!-- /container -->
+{% endblock %}

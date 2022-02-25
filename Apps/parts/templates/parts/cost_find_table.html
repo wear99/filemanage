@@ -1,0 +1,328 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}成本查询{% endblock %}
+<!--显示filefiled文件：{{ pic.file.url }} -->
+{% block content %}
+
+<div> 
+    <form>
+        {% csrf_token %}            
+    </form>   
+    <div id="toolbar">  
+        <div class="form-inline">  
+            <select id="id_field_type" name='field_type' class="form-control" style="width:100px;">                
+                <option value="code">编码</option>
+                <option value="draw">图号</option>                
+                <option value="name">名称</option>                
+            </select>    
+            
+            <input name="search" id= 'id_search' class="form-control" type="text" placeholder="Search" style="width:300px;">
+            <div class='px-2'>
+                <button id="id_search_btn" type="button" class="btn btn-primary">查询成本</button>
+            </div>
+               
+        <div class="px-3 form-inline" role="group">            
+            <button type="button" class="btn" id='parthistory' >历史版本</button>
+            <button type="button" class="btn" id='viewfile' >图纸</button>
+            
+            <div class="dropdown px-2">
+                <button class="btn dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    其它</button>
+                <div class="dropdown-menu">                   
+                    
+                    <button type="button" class="dropdown-item" id='parthistory' >物料历史版本</button>
+                </div>
+            </div>
+        </div>
+        </div>
+    </div>
+    <div>        
+        <table id="table" class="table table-bordered table-sm text-nowrap"  data-virtual-scroll="true" style="font-size: 14px;" data-resizable="true" ></table>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block custom-script %}
+<link rel="stylesheet" type="text/css" href="{% static 'jquery/jquery.resizableColumns.css' %}" >
+<link rel="stylesheet" type="text/css" href="{% static 'bootstrap-table/dist/bootstrap-table.min.css' %}" >
+
+<script type="text/javascript" src="{% static 'jquery/jquery.resizableColumns.min.js' %}"></script>
+
+<script type="text/javascript" src="{% static 'bootstrap-table/dist/bootstrap-table.min.js' %}"></script>
+<script type="text/javascript" src="{% static 'bootstrap-table/dist/locale/bootstrap-table-zh-CN.min.js' %}"></script>
+<script type="text/javascript" src="{% static 'bootstrap-table/dist/extensions/resizable/bootstrap-table-resizable.min.js' %}"></script>
+
+<script>
+    var row_data={};
+    var col=[];
+    var codecol = [
+        { checkbox:true },
+        {
+            field: 'sn',
+            title: '序号',
+            formatter: function (value, row, index) {
+                        if (!value){
+                            return index+1;
+                        }else{
+                            return value;    
+                        }                        
+                        
+                    }
+        }, {
+            field: 'code',
+            title: '编 码',
+            halign: 'center',    
+            sortable:true,
+            //width: 150,
+            formatter: function (value, row, index) {
+                        if (value == row['draw']+row['name']) {
+                            return '';
+                        } else if(row['valid']==0) {
+                            return '<span style="color:#808080">' + value + '</span>'                          
+                            
+                        }else{
+                            return value;
+                        }
+                    },
+            cellStyle: formatTableUnit,
+        }, {
+            field: 'draw',
+            title: '图 号',
+            halign: 'center',    
+            sortable:true, 
+            //width: 200, 
+            cellStyle: formatTableUnit,
+            formatter: paramsMatter,    
+        },
+         {
+            field: 'name',
+            title: '名 称',
+            halign: 'center', 
+            //width: 300,   
+            sortable:true,
+            cellStyle: formatTableUnit,
+            formatter: paramsMatter,
+        },
+        {
+            field: 'quantity',
+            title: '数量',
+            align: 'center',            
+        },
+        {
+            field: 'total',
+            title: '总数量',
+            align: 'center',             
+        },
+        {
+            field: 'material_cost',
+            title: '材料成本',
+            halign: 'center',             
+            sortable:true
+        },
+        {
+            field: 'labor_cost',
+            title: '人工成本',
+            halign: 'center',             
+            sortable:true
+        },
+        {
+            field: 'managed_cost',
+            title: '管理成本',
+            halign: 'center',            
+            sortable:true
+        },
+        {
+            field: 'cost',
+            title: '成本',
+            halign: 'center',            
+            sortable:true
+        },
+        {
+            field: 'total_cost',
+            title: '总成本',
+            halign: 'center',            
+            sortable:true
+        },
+        {
+            field: 'remark',
+            title: '备注',
+            halign: 'center',            
+        },
+        
+        {
+            field: 'material',
+            title: '材 料',
+            halign: 'center',
+            visible:false,        
+            //width: 250,              
+        },
+        {
+            field: 'add_time',
+            title: '时 间',
+            align: 'center',    
+            sortable:true
+        },
+        {
+            field: 'file_id',
+            title: '文 件',
+            visible:false,            
+        },
+        
+        ];
+        
+    $("#table").bootstrapTable({
+        toolbar: '#toolbar',                //自定义工具按钮
+        //url: '/parts/partfind2/',          //请求后台的URL（*）
+        method: 'post',                      //请求方式（*）
+        contentType : "application/x-www-form-urlencoded",
+        striped: false,                       //是否显示行间隔色
+        sortable: true,                     //是否启用排序
+        sortOrder: "asc",                   //排序方式
+        cache: false,                      //是否使用缓存，默认为true，所以一般情况下需要设置一下这个属性（*）
+        pagination: true,                   //是否显示分页（*）
+        pageSize: 200,                       //每页的记录行数（*）
+        //pageList: [20, 50, 200, 'All'], //可供选择的每页的行数（*）
+        sidePagination: "client",           //分页方式：client客户端分页，server服务端分页（*）
+        pageNumber: 1,                      //初始化加载第一页，默认第一页
+
+        search:true,                        //******开启搜索框****//        
+        searchOnEnterKey:false,             //******回车后执行搜索****//
+        strictSearch:true,                  //******完全匹配****//
+        trimOnSearch:true,                  //去除关键词空格//
+        searchAlign:"right",
+        undefinedText:'',
+
+        singleSelect:true,                  //单选
+        showColumns: true,                  //是否显示所有的列
+        showRefresh: false,                  //是否显示刷新按钮
+        showToggle: false,                   // 切换试图（table/card）按钮
+        minimumCountColumns: 1,             //最少允许的列数
+        clickToSelect: true,                //是否启用点击选中行        
+        //uniqueId: "code",                   //每一行的唯一标识，一般为主键列        
+        cardView: false,                    //是否显示详细视图
+        detailView: true,                   //是否显示父子表 
+        detailViewIcon: false,
+        detailViewByClick: false,           //点击行时显示详情
+        detailFormatter:detailFormatter,   
+        //height: 600,                        //行高，如果没有设置height属性，表格自动根据记录条数决定表格高度
+        showToggle: false,                  //是否显示详细视图和列表视图的切换按钮
+        columns: codecol,                   //列参数   
+        //onPreBody:formartcol,
+        //表格载入事件
+        onLoadSuccess:function (data) {
+            if ('quantity' in data){
+            $('#table').bootstrapTable('showColumn',['total','quantity']);
+            }else{
+                $('#table').bootstrapTable('hideColumn',['total','quantity']);
+            }    
+        },
+        onClickRow:function (row,ele) {
+                    
+        },
+        
+        });    
+
+    
+    $("#id_search_btn").click(function () {            
+        var q_p={
+            search:$.trim($('#id_search').val()),
+            field_type:$('#id_field_type').val(),            
+            csrfmiddlewaretoken: $("[name='csrfmiddlewaretoken']").val(),
+        }
+        $('#table').bootstrapTable("refreshOptions",{columns:codecol});
+        $('#table').bootstrapTable('refresh',{url:'/parts/costfind/',query:q_p}); // 很重要的一步，刷新url！       
+            
+    });
+    
+    $('#viewfile').click(function(){
+        var row_data = $('#table').bootstrapTable('getSelections')[0];       
+        if (row_data['file_id']){
+            window.open("/files/view/"+row_data['file_id']);
+            };
+        });
+        
+    $('#costrecalc').click(function(){
+        var row_data = $('#table').bootstrapTable('getData');
+        if (row_data){
+            var p= '/parts/costrecalc/';
+            var q_p={
+                search:JSON.stringify(row_data),                
+                csrfmiddlewaretoken: $("[name='csrfmiddlewaretoken']").val(),
+            };            
+            $('#table').bootstrapTable('refresh',{url:p,query:q_p});
+            //$('#table').bootstrapTable('showColumn',['total','quantity',]);
+            };
+        });
+    $('#parthistory').click(function(){
+        var row_data = $('#table').bootstrapTable('getSelections')[0];
+        if (row_data){
+            var p= '/parts/parthistory/';
+            var q_p={
+                search:row_data['code'],                
+                csrfmiddlewaretoken: $("[name='csrfmiddlewaretoken']").val(),
+            };            
+            $('#table').bootstrapTable('refresh',{url:p,query:q_p});
+            //$('#table').bootstrapTable('showColumn',['total','quantity',]);
+            };
+        });
+
+
+        
+    $(document).ready(function () {
+        var findJsonStr = sessionStorage.getItem('costfind');       
+        if (findJsonStr){
+            find = JSON.parse(findJsonStr);
+            sessionStorage.removeItem('costfind');
+
+            var q_p={
+                search: JSON.stringify(find['search']),
+                field_type: find['field_type'],
+                
+                csrfmiddlewaretoken: $("[name='csrfmiddlewaretoken']").val(),
+                };
+        
+            $('#table').bootstrapTable('refresh',{url: '/parts/costfind/',query:q_p});    
+        };
+        });
+
+    //td宽度以及内容超过宽度隐藏
+    function formatTableUnit(value, row, index) {
+        return {
+            css: {
+                "white-space": "nowrap",
+                "text-overflow": "ellipsis",
+                "overflow": "hidden",
+                "max-width": "200px"
+            }
+        }
+    };         
+    
+    //表格超出宽度鼠标悬停显示td内容
+    function paramsMatter(value, row, index) {
+        var span = document.createElement("span");
+            span.setAttribute("title", value);
+            span.innerHTML = value;
+            return span.outerHTML;
+            };
+    function detailFormatter(index, row) {
+            var html = []
+            var vcols=$('#table').bootstrapTable('getVisibleColumns');
+            $.each(vcols,function(key,value){
+                html.push('<p class="my-1"><b>' + value["title"] + ':</b> ' + row[value["field"]] + '</p>')
+            })
+            
+            return html.join('')
+        };
+    function formartcol(data){
+        alert(data);
+        if ('quantity' in data){
+            $('#table').bootstrapTable('showColumn',['total','quantity']);
+        }else{
+            $('#table').bootstrapTable('hideColumn',['total','quantity']);
+        }
+    };
+    
+    </script>
+{% endblock %}

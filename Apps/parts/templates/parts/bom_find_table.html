@@ -1,0 +1,396 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Bom查询{% endblock %}
+{% block navtitle %}设计Bom查询 {% endblock %}
+<!--显示filefiled文件：{{ pic.file.url }} -->
+{% block content %}
+
+<div id="modalTable" class="modal fade" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Modal table</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <table id="modal_table" class="table table-bordered table-sm">
+                    
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+            </div>
+        </div>
+        </div>
+
+<div> 
+    <form>
+        {% csrf_token %}            
+    </form>   
+    <div id="toolbar">  
+        <div class="form-inline">  
+            <select id="id_field_type" name='field_type' class="form-control" style="width:100px;">
+                <option value="CODE">编码</option>
+                <option value="DRAW">图号</option>
+                <option value="PRODUCT_CODE">产品码</option>
+                <option value="PRODUCT_NAME">产品名称</option>                
+                <option value="ARCHIVE_NO">发放单号</option>
+                <option value="USERNAME">发放人</option>
+            </select>            
+            <input name="search" id= 'id_search' class="form-control" type="text" placeholder="Search" style="width:300px;">
+            <div class="btn-group"  role="group">
+                <button id="id_search_btn" type="button" class="btn btn-primary">查产品</button>
+                <button type="button" class="btn btn-primary" id='partsearch'>查零件</button>
+                
+            </div>
+               
+        <div class="btn-group pl-3"  role="group">
+            <button type="button" class="btn" id='viewroot' >所有产品</button>
+            <button type="button" class="btn" id='parentsearch'>反查</button>
+            <button type="button" class="btn" id='childsearch'>子件</button>
+            <button type="button" class="btn" id='viewfile' >图纸</button>
+            <button type="button" class="btn" id='archiveinfo' >发放详情</button>
+            <div class="dropdown px-2">
+                <button class="btn dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    其它</button>
+                <div class="dropdown-menu">
+                    <button type="button" class="dropdown-item" id='parentsearch_history'>反查历史</button> 
+                    <button type="button" class="dropdown-item" id='childsearch_history'>子件历史</button>
+                    <button type="button" class="dropdown-item" id='costfind' >成本</button>
+                </div>
+            </div>
+        </div>
+        </div>
+    </div>
+    <div>        
+        <table id="table" class="table table-bordered table-sm text-nowrap"  data-virtual-scroll="true" style="font-size: 14px;" data-resizable="true" ></table>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block custom-script %}
+<link rel="stylesheet" type="text/css" href="{% static 'jquery/jquery.resizableColumns.css' %}" >
+<link rel="stylesheet" type="text/css" href="{% static 'bootstrap-table/dist/bootstrap-table.min.css' %}" >
+
+<script type="text/javascript" src="{% static 'jquery/jquery.resizableColumns.min.js' %}"></script>
+
+<script type="text/javascript" src="{% static 'bootstrap-table/dist/bootstrap-table.min.js' %}"></script>
+<script type="text/javascript" src="{% static 'bootstrap-table/dist/locale/bootstrap-table-zh-CN.min.js' %}"></script>
+<script type="text/javascript" src="{% static 'bootstrap-table/dist/extensions/resizable/bootstrap-table-resizable.min.js' %}"></script>
+
+<script>
+    var codecol = [
+        { checkbox:true },
+        {
+            field: 'sn',
+            title: '序号',
+            //width: 100,
+            //align: 'center',
+            //valign: 'middle',
+            formatter: function (value, row, index) {
+                        if (!value){
+                            return index+1;
+                        }else{
+                            return value;    
+                        }                        
+                        
+                    }
+        }, {
+            field: 'code',
+            title: '编 码',
+            halign: 'center',    
+            sortable:true,
+            //width: 150,
+            formatter: function (value, row, index) {
+                        if (value == row['draw']+row['name']) {
+                            return '';
+                        } else if(row['valid']==0) {
+                            return '<span style="color:#808080">' + value + '</span>'                          
+                            
+                        }else{
+                            return value;
+                        }
+                    },
+            cellStyle: formatTableUnit,
+        }, {
+            field: 'draw',
+            title: '图 号',
+            halign: 'center',    
+            sortable:true, 
+            //width: 200, 
+            cellStyle: formatTableUnit,
+            formatter: paramsMatter,    
+        },
+         {
+            field: 'name',
+            title: '名 称',
+            halign: 'center', 
+            //width: 300,   
+            sortable:true,
+            cellStyle: formatTableUnit,
+            formatter: paramsMatter,
+        },
+        {
+            field: 'quantity',
+            title: '数量',
+            align: 'center',    
+            
+        },
+        {
+            field: 'total',
+            title: '总数量',
+            align: 'center',           
+        },
+        
+        {
+            field: 'material',
+            title: '材 料',
+            halign: 'center',
+            //width: 250,              
+        },
+        {
+            field: 'add_time',
+            title: '时 间',
+            align: 'center',    
+            sortable:true
+        },
+        {
+            field: 'file_id',
+            title: '文 件',
+            visible:false,            
+        },
+        {
+            field: 'archive',
+            title: '发放号',
+            visible:false,            
+        },
+        ];   
+    
+    $("#table").bootstrapTable({
+        toolbar: '#toolbar',                //自定义工具按钮
+        //url: '/parts/partfind2/',          //请求后台的URL（*）
+        method: 'post',                      //请求方式（*）
+        contentType : "application/x-www-form-urlencoded",
+        striped: false,                       //是否显示行间隔色
+        sortable: true,                     //是否启用排序
+        sortOrder: "asc",                   //排序方式
+        cache: false,                      //是否使用缓存，默认为true，所以一般情况下需要设置一下这个属性（*）
+        pagination: true,                   //是否显示分页（*）
+        pageSize: 200,                       //每页的记录行数（*）
+        //pageList: [20, 50, 200, 'All'], //可供选择的每页的行数（*）
+        sidePagination: "client",           //分页方式：client客户端分页，server服务端分页（*）
+        pageNumber: 1,                      //初始化加载第一页，默认第一页
+
+        search:true,                        //******开启搜索框****//        
+        searchOnEnterKey:false,             //******回车后执行搜索****//
+        strictSearch:true,                  //******完全匹配****//
+        trimOnSearch:true,                  //去除关键词空格//
+        searchAlign:"right",
+        undefinedText:'',
+
+        singleSelect:true,                  //单选
+        showColumns: true,                  //是否显示所有的列
+        showRefresh: false,                  //是否显示刷新按钮
+        showToggle: false,                   // 切换试图（table/card）按钮
+        minimumCountColumns: 1,             //最少允许的列数
+        clickToSelect: true,                //是否启用点击选中行        
+        //uniqueId: "code",                   //每一行的唯一标识，一般为主键列        
+        cardView: false,                    //是否显示详细视图
+        detailView: true,                   //是否显示父子表 
+        detailViewIcon: false,              //显示详情的图标
+        detailViewByClick: false,           //点击行时显示详情
+        detailFormatter:detailFormatter,    //显示详情时的方法
+        //height: 600,                        //行高，如果没有设置height属性，表格自动根据记录条数决定表格高度
+        showToggle: false,                  //是否显示详细视图和列表视图的切换按钮
+        columns: codecol,                   //列参数   
+        
+        });    
+    
+    
+    $("#id_search_btn").click(function () {            
+        var q_p={
+            search:$.trim($('#id_search').val()),
+            field_type:$('#id_field_type').val(),            
+            csrfmiddlewaretoken: $("[name='csrfmiddlewaretoken']").val(),
+        }        
+        $('#table').bootstrapTable('refresh',{url:'/parts/rootfind/',query:q_p}); // 很重要的一步，刷新url！       
+            
+    });
+    $("#partsearch").click(function () {            
+        var q_p={
+            search:$.trim($('#id_search').val()),
+            field_type:$('#id_field_type').val(),            
+            csrfmiddlewaretoken: $("[name='csrfmiddlewaretoken']").val(),
+        }        
+        $('#table').bootstrapTable('refresh',{url:'/parts/partfind/',query:q_p}); // 很重要的一步，刷新url！       
+            
+    });
+    
+    $('#parentsearch').click(function(){
+        var row_data = $('#table').bootstrapTable('getSelections')[0];
+        if (row_data['code']){ 
+            var p= '/parts/bomfind/';
+            var q_p={
+                search:row_data['code'],
+                field_type:'PARENT',
+                bom_type:'CURRENT',
+                //ar_id:row_data['archive'],
+                csrfmiddlewaretoken: $("[name='csrfmiddlewaretoken']").val(),
+            };       
+            $('#table').bootstrapTable('refresh',{url:p,query:q_p});
+            
+            };    
+        });
+    $('#childsearch222222').click(function(){
+        var row_data = $('#table').bootstrapTable('getSelections')[0];
+        if (row_data['code']){ 
+            // 存储值：将对象转换为Json字符串
+            // sessionStorage.setItem('user', JSON.stringify(userEntity));
+
+            // 取值时：把获取到的Json字符串转换回对象,没有的时候返回null
+            // var userJsonStr = sessionStorage.getItem('user');
+            // userEntity = JSON.parse(userJsonStr);
+
+            // 从 sessionStorage 删除保存的数据
+            //sessionStorage.removeItem('key');
+
+            // 从 sessionStorage 删除所有保存的数据
+            // sessionStorage.clear();
+
+            var bomfind={'type':'CHILD','bom':'ARCHIVE','data':row_data['code']}
+            sessionStorage.setItem('bomfind', JSON.stringify(bomfind));
+            window.open('/parts/bomfind/','_blank');
+        }
+        });
+
+    $('#childsearch').click(function(){
+        var row_data = $('#table').bootstrapTable('getSelections')[0];
+        if (row_data['code']){ 
+            var p= '/parts/bomfind/';
+            var q_p={
+                search:row_data['code'],
+                field_type:'CHILD',
+                bom_type:'CURRENT',                
+                csrfmiddlewaretoken: $("[name='csrfmiddlewaretoken']").val(),
+            };       
+            $('#table').bootstrapTable('refresh',{url:p,query:q_p});
+            
+            };             
+        });
+    $('#viewfile').click(function(){
+        var row_data = $('#table').bootstrapTable('getSelections')[0];       
+        if (row_data['file_id']){
+            window.open("/files/view/"+row_data['file_id']);
+            };
+        });
+    
+    $('#viewroot').click(function(){       
+        var p= '/parts/rootfind/';
+        var q_p={
+            search:'ALL',
+            field_type:'ALL',            
+            csrfmiddlewaretoken: $("[name='csrfmiddlewaretoken']").val(),
+        };
+        $('#table').bootstrapTable('refresh',{url:p,query:q_p});        
+     
+        });   
+    
+    $('#parentsearch_history').click(function(){
+        var row_data = $('#table').bootstrapTable('getSelections')[0];
+        if (row_data['code']){ 
+            
+            var p= '/parts/bomhistory/';
+            var q_p={
+                search:row_data['code'],
+                field_type:'PARENT',               
+                csrfmiddlewaretoken: $("[name='csrfmiddlewaretoken']").val(),
+            };
+            $('#table').bootstrapTable('refresh',{url:p,query:q_p});             
+        }
+        });
+    $('#childsearch_history').click(function(){
+        var row_data = $('#table').bootstrapTable('getSelections')[0];
+        if (row_data['code']){ 
+            var p= '/parts/bomhistory/';
+            var q_p={
+                search:row_data['code'],
+                field_type:'CHILD',                
+                //ar_id:row_data['archive_id'],
+                csrfmiddlewaretoken: $("[name='csrfmiddlewaretoken']").val(),
+            };       
+            $('#table').bootstrapTable('refresh',{url:p,query:q_p});
+            
+            };            
+        });
+
+    $('#costfind').click(function(){
+        var row_data = $('#table').bootstrapTable('getData');
+        if (row_data){
+            var costfind={'search':row_data,'field_type':'BOM'};
+            sessionStorage.setItem('costfind', JSON.stringify(costfind));
+            window.open('/parts/costfind/','_blank');
+            };
+        });
+    $('#archiveinfo').click(function(){
+        var row_data = $('#table').bootstrapTable('getSelections')[0];
+        if (row_data['archive']){            
+            window.open('/archive/detail/'+row_data['archive'],'_blank');
+            };
+        });
+
+    //td宽度以及内容超过宽度隐藏
+    function formatTableUnit(value, row, index) {
+        return {
+            css: {
+                "white-space": "nowrap",
+                "text-overflow": "ellipsis",
+                "overflow": "hidden",
+                "max-width": "200px"
+            }
+        }
+        };         
+    
+    //表格超出宽度鼠标悬停显示td内容
+    function paramsMatter(value, row, index) {
+        var span = document.createElement("span");
+            span.setAttribute("title", value);
+            span.innerHTML = value;
+            return span.outerHTML;
+            };
+
+    //切换详情视图时显示内容
+    function detailFormatter(index, row) {
+        var html = []
+        var vcols=$('#table').bootstrapTable('getVisibleColumns');
+        $.each(vcols,function(key,value){
+            html.push('<p class="my-1"><b>' + value["title"] + ':</b> ' + row[value["field"]] + '</p>')
+        })
+        
+        return html.join('')
+        };
+    
+    $(document).ready(function () {
+        var bomfindJsonStr = sessionStorage.getItem('bomfind');       
+        if (bomfindJsonStr){
+            bomfind = JSON.parse(bomfindJsonStr);
+            sessionStorage.removeItem('bomfind');
+
+            var q_p={
+                search: bomfind['search'],
+                field_type: bomfind['field_type'],
+                bom_type: bomfind['bom_type'],
+                archive: bomfind['archive'],
+                csrfmiddlewaretoken: $("[name='csrfmiddlewaretoken']").val(),
+                };
+            $('#table').bootstrapTable('refresh',{url: '/parts/bomfind/',query:q_p});
+    
+        };
+        });
+     
+</script>
+{% endblock %}
