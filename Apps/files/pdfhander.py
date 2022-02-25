@@ -62,7 +62,7 @@ class fileModel():
         pdf_output.write(open(out, 'wb'))
 
 # 创建水印文件2
-def create_watermark(page,file_stage,fileno):
+def create_watermark(page,file_stage,file_id,add_time):
     #print('水印开始...' + str(datetime.now()))
     # 默认大小为21cm*29.7cm
     mark = str(int(time.time()))+'.pdf'
@@ -102,24 +102,26 @@ def create_watermark(page,file_stage,fileno):
     #c.setFillAlpha(0.3)
 
     # 画几个文本，注意坐标系旋转的影响
+    # 写入发放类型
     c.drawString(13, 20, file_stage)
     #c.setFillAlpha(0.6)
 
-    c.setFont("Helvetica", 11)
-    createdate = (datetime.now()).strftime("%Y-%m-%d")
-    c.drawString(15, 5, createdate)
+    # 写入时间
+    c.setFont("Helvetica", 11)    
+    c.drawString(15, 5, add_time)
 
-    c.setFont("Helvetica", 8)
+    # 写入文件ID
+    c.setFont("Helvetica", 8)    
+    c.drawString(5, 45, str(file_id))
+
     #tag = str(int(time.time()))  # 给文件加时间戳
-    c.drawString(5, 45, str(fileno))
 
     # 关闭并保存pdf文件
-    c.save()
-    #print('水印结束...' + str(datetime.now()))
+    c.save()    
     return mark
 
 #在PDF上加水印
-def add_watermark(file_path,file_stage,fileno):
+def add_watermark(file_path,file_stage,file_id,add_time):
     """把水印添加到pdf中"""
     
     pdf_input = PdfFileReader(file_path)
@@ -134,7 +136,8 @@ def add_watermark(file_path,file_stage,fileno):
     #mark = str(int(time.time()))+'.pdf'
     #mark = os.path.join('d:/', mark)
     
-    mark=create_watermark(page, file_stage, fileno)
+    mark = create_watermark(page, file_stage, file_id,
+                            add_time.strftime("%Y-%m-%d"))
 
     # 读入水印pdf文件   
     pageNum = pdf_input.getNumPages()
@@ -155,8 +158,8 @@ def add_watermark(file_path,file_stage,fileno):
 
 def files_add_mark(files):
     print('start..' + str(datetime.now()))
-    for file in files:        
-        add_watermark(file[0],file[1],file[2])
+    for item in files:
+        add_watermark(item['file_path'],item['stage'],item['file_id'],item['add_time'])
 
     print('end..' + str(datetime.now()))
 

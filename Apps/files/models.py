@@ -26,12 +26,14 @@ def createfileno():
         new = year*10000+1
     return new
 
+
 def upload_to(instance, filename):
     # 将文件名加上随机字符，避免被直接访问
     name, ext = os.path.splitext(filename)
     filename = '{}_{}{}'.format(name,uuid4().hex[:10], ext)
 
-    return "PDgroup/{0}/{1}/{2}".format(instance.product, instance.get_stage_display(), filename)
+    return "PDgroup/{0}/{1}/{2}".format(instance.product.product_name, instance.stage.stage_name, filename)
+
 
 class ssFile(models.Model):
     file_id = models.IntegerField(
@@ -40,14 +42,16 @@ class ssFile(models.Model):
 
     # 图纸的阶段标记,试制S,小批A,定制C,实验Y,一次性O
     # get_stage_display()   取出选项对应的字段
-    stage = models.IntegerField(
-        default=10, choices=stage_type, verbose_name='发放类型')
 
-    product = models.CharField(max_length=32, default='未分类',verbose_name='产品名称')
-    
+    stage = models.ForeignKey(
+        'archive.StageType', on_delete=PROTECT, verbose_name='发放类型')
+
+    product = models.ForeignKey(
+        'archive.Product', on_delete=PROTECT, verbose_name='产品名称')
 
     archive = models.CharField(max_length=64, null=True, verbose_name='发放单号')
     
+    # 应和权限结合起来？一张图纸可能会对应多个部门
     output = models.CharField(
         max_length=20, blank=True, null=True, verbose_name='发放部门')
 
@@ -78,8 +82,11 @@ class ssFile(models.Model):
         return self.filename
     
     def to_dict(self):
-        item = model_to_dict(self, exclude=('filepath', 'valid_time', 'add_time'))       
-        
+        item = model_to_dict(self, exclude=('filepath', 'valid_time', 'add_time','stage','product'))       
+        item['stage'] = self.stage.stage_name
+        item['stage_lv'] = self.stage.stage_lv
+        item['product'] = self.product.product_name
+        item['product_code'] = self.product.product_code
         item['add_time'] = self.add_time.strftime("%Y-%m-%d %H:%M")
         if self.valid_time:
             item['valid_time'] = self.valid_time.strftime("%Y-%m-%d %H:%M")

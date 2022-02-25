@@ -35,7 +35,7 @@ class FileUploadView_archive(PermissionRequiredMixin, View):
             return Http404        
         request.session['has_post_file'] = True
 
-        rst = upload_file(obj, files, request.user.username)  # 上传文件处理        
+        rst = upload_file(obj, files)  # 上传文件处理        
 
         i = '文件上传成功'
         return render(request, 'info.html', {'info': i})

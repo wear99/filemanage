@@ -12,12 +12,14 @@ def upload_to(instance, filename):
     # 将文件名加上随机字符，避免被直接访问
     name, ext = os.path.splitext(filename)
     filename = '{}_{}{}'.format(name, uuid.uuid4().hex[:10], ext)
-    return "PDgroup/{0}/{1}/{2}".format(instance.product.product_name, instance.get_stage_display(), filename)
+    return "PDgroup/{0}/{1}/{2}".format(instance.product.product_name, instance.stage.stage_name, filename)
 
 # 发放类型
 class StageType(models.Model):
     id=models.AutoField(primary_key=True)
-    
+
+    # 发放图纸的代码，小批9，定制7，试制5，实验3，一次性1，
+    stage_id = models.IntegerField(default=1, verbose_name='发放代码')
     stage_name=models.CharField(max_length=16,unique=True,verbose_name='发放类型')
     stage_mark=models.CharField(max_length=16,verbose_name='发放标记')
     remark=models.CharField(max_length=30,blank=True,null=True,verbose_name='备注')
@@ -47,6 +49,7 @@ class Product(models.Model):
         return self.product_name
 
 
+
 # 发放单
 class Archive(models.Model): 
     # get_stage_display()   取出选项对应的字段    
@@ -55,12 +58,10 @@ class Archive(models.Model):
     archive_no = models.CharField(max_length=18, verbose_name='文件发放单号')
     
     product= models.ForeignKey('Product',on_delete=PROTECT,verbose_name='产品名称')
-
-    stage = models.IntegerField(
-        default=10, choices=stage_type, verbose_name='发放类型')
+    stage = models.ForeignKey(
+        'StageType', on_delete=PROTECT, verbose_name='发放类型')    
 
     description = models.CharField(max_length=256, verbose_name='发放说明')
-
     username = models.CharField(max_length=30, verbose_name='发放人')
 
     file = models.FileField(upload_to=upload_to,
@@ -82,7 +83,8 @@ class Archive(models.Model):
         item['archive_no']=self.archive_no
         item['product']=self.product.product_name
         item['product_code'] = self.product.product_code
-        item['stage'] = self.get_stage_display()
+        item['stage'] = self.stage.stage_name
+        item['stage_lv'] = self.stage.stage_lv
         item['description']=self.description
         item['username'] = self.username
         item['add_time'] = self.add_time.strftime("%Y-%m-%d %H:%M")

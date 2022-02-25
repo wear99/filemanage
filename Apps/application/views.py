@@ -29,6 +29,8 @@ def GetProvidlist(appno):
 
 
 # 新增申请单，需权限判断
+# 申请bom在线填写？上传excel？
+
 class AppAddView(LoginRequiredMixin,View):
     def get(self,request):
         form = ApplicationForm()

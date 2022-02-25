@@ -7,7 +7,7 @@ from django.contrib import auth
 # 定义用户模型，添加额外的字段
 # 需要在settings中指定自定义认证模型：AUTH_USER_MODEL = 'users.UserProfile'
 class UserProfile(AbstractUser):
-    #role = models.ForeignKey("Role", verbose_name="角色", on_delete=models.DO_NOTHING)
+    
     ch_name = models.CharField(max_length=8, default='姓名',verbose_name="姓名")
     role = models.CharField(max_length=20,default='员工',verbose_name="角色")
     phone = models.CharField(max_length=15, blank=True, verbose_name="电话")

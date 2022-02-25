@@ -11,28 +11,26 @@ from parts.search import Partfind_dict, childfind_current
 from files.pdfhander import files_add_mark
 
 
-# 把已存在的同名文件,按日期排序,只保留最新的，其余设为 失效0；
-def check_file_valid(objs):
-    for obj in objs:
-        ex = ssFile.objects.filter(filename=obj.filename, file_valid=1).exclude(
-            file_id=obj.file_id).order_by('add_time').last()
-        if ex:  #先比较类型，低类型的不会导致高的失效；高的会导致低的失效；当类型相同，再比较时间
-            if obj.stage>ex.stage:
-                ex.file_valid = 0
-                ex.valid_info = obj.file_id
-                ex.valid_time = obj.add_time
-                ex.save()
-            elif obj.stage == ex.stage:
-                if obj.add_time > ex.add_time:
-                    ex.file_valid=0
-                    ex.valid_info=obj.file_id
-                    ex.valid_time=obj.add_time
-                    ex.save()
-                else:
-                    obj.file_valid = 0
-                    obj.valid_info = ex.file_id
-                    obj.valid_time = ex.add_time
-                    obj.save()
+# 把已存在的同名文件、同发放类型的,按日期排序,只保留最新的，其余设为 失效0；
+def check_file_valid(obj):    
+    ex = ssFile.objects.filter(filename=obj.filename, stage=obj.stage,file_valid=1).exclude(
+        file_id=obj.file_id).order_by('add_time').last()
+    if ex:  #比较时间
+        if obj.add_time > ex.add_time:
+            ex.file_valid=0
+            ex.valid_info=obj.file_id
+            ex.valid_time=obj.add_time
+            ex.save()
+        else:
+            obj.file_valid = 0
+            obj.valid_info = ex.file_id
+            obj.valid_time = ex.add_time
+            obj.save()
+    
+    # 如果是小批，还应把试制图纸设为失效
+    if obj.stage.stage_id==9:
+        ssFile.objects.filter(filename=obj.filename,
+                                stage=5, file_valid=1).update(file_valid=0, valid_info=obj.file_id, valid_time=obj.add_time)
 
 
 # 上传文件处理：写入数据库；同图号的设为失效；加水印；和物料进行关联；
@@ -41,29 +39,34 @@ def upload_file(ar_obj, files, username):
     up_files = {}
     for f in files:
         fname, ext = os.path.splitext(f.name.upper())   # 要去掉扩展名
-
-        # 同图号，同发放单的图纸直接替换旧的
-        new, is_new = ssFile.objects.update_or_create(
-            filename=fname,
-            archive=str(ar_obj.archive_id),
-            defaults={
-                'stage': ar_obj.stage,
-                'product': ar_obj.product.product_name,
-                'username': username,
-                'filepath': f,
-                'add_time': ar_obj.add_time
-            })
+        
+        new=ssFile()
+        new.filename=fname
+        new.archive = str(ar_obj.archive_id)
+        new.stage = ar_obj.stage
+        new.product = ar_obj.product
+        new.username = ar_obj.username
+        new.filepath=f
+        new.add_time = ar_obj.add_time
+        new.save()        
 
         if ext == '.PDF':  # 增加文件水印
             add_mark.append(
-                (new.filepath.path, new.get_stage_display(), new.file_id))
+                {
+                    'filepath': new.filepath.path,
+                    'stage': new.stage.stage_name,
+                    'file_id': new.file_id,
+                    'add_time': new.add_time
+                }
+                )
             up_files[new.file_id] = new
 
         # 写入上传记录
         #LogFile(new, 'Upload', username)
 
     # 将同名文件设置为失效
-    check_file_valid(up_files.values())
+    for obj in up_files.values():
+        check_file_valid(obj)
 
     # 进行文件和物料的关联
     part_file(ar_obj.archive_id, bom=None, filelist=up_files.keys())

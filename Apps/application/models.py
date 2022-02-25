@@ -31,6 +31,8 @@ def create_appno():
     return str(new)
 
 
+file_ready = ((0, '未准备'), (1, '准备中'), (2, '准备完成'),)
+
 # 图纸申请单
 class Application(models.Model):
     app_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -40,16 +42,22 @@ class Application(models.Model):
     description = models.CharField(max_length=256, verbose_name='申请说明')
     
     product = models.ForeignKey(
-        'archive.Product', on_delete=PROTECT, verbose_name='产品名称')    
-
-    file = models.FileField(upload_to=upload_to,
-                            max_length=255,null=True, blank=True, verbose_name='申请文件')
+        'archive.Product', on_delete=PROTECT, verbose_name='产品名称')
+    
     bom = models.FileField(
         upload_to=upload_to, max_length=255, null=True, blank=True, verbose_name='申请文件清单')
-    # 0 编辑中，1 审核节点1；2 审核节点2....10 结束
-    #status = models.IntegerField(default=0, verbose_name='申请单状态')
+
+    #申请图纸的目录,用于存放添加了申请信息的图纸，定期删除（下载时可单个文件下载或打包为zip文件流下载）
+    folderpath=models.CharField(max_length=255,null=True,verbose_name='申请文件目录')
+
+    # 0 编辑中，1 审核节点1；2 审核节点2....10 结束    
     status = models.ForeignKey(
         'process.Process', on_delete=SET_NULL,null=True, verbose_name='审批流程')
+    
+    #申请单图纸状态
+    is_ready= models.IntegerField(default=0,choices=file_ready,verbose_name='图纸准备')
+    total_file = models.IntegerField(default=0, verbose_name='图纸数量')
+    miss_file = models.IntegerField(default=99, verbose_name='是否缺图')
 
     username = models.CharField(max_length=18, verbose_name='申请人')
     add_time = models.DateTimeField(default=timezone.now, verbose_name='申请时间')
@@ -83,16 +91,16 @@ class ApplicationBom(models.Model):
     code = models.CharField(max_length=60, null=True, verbose_name='编码')
     draw = models.CharField(max_length=50, null=True, verbose_name='图号')
     name = models.CharField(max_length=50, null=True, verbose_name='名称')
-
-    # 所关联的物料,考虑到有时候没有图纸，所以用物料来记录，便于发现缺少的图纸
-    part = models.ForeignKey(
-        'parts.PartCode', null=True, on_delete=SET_NULL, verbose_name='物料')
-
-    # 只有当一个图纸没有编码关联时，才记录其图纸号
+    
+    # 提供的图纸
     file = models.ForeignKey(
         'files.ssFile', null=True, on_delete=SET_NULL, verbose_name='图纸')
     
-    is_download=models.IntegerField(default=0,verbose_name='下载')
+    #提供方式
+    provider=models.CharField(max_length=32,null=True,verbose_name='提供者')
+    
+    add_time = models.DateTimeField(default=timezone.now, verbose_name='时间')
+    
 
     class Meta:
         verbose_name = '图纸申请明细'
