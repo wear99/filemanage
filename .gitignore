@@ -6,6 +6,12 @@ __pycache__/
 # C extensions
 *.so
 
+#user
+bootstrap-4.6.0-examples/
+static/
+sstech/
+icons/
+
 # Distribution / packaging
 .Python
 build/
@@ -25,8 +31,7 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
-static/
-sstech/
+
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -60,7 +65,7 @@ cover/
 # Django stuff:
 *.log
 local_settings.py
-db.sqlite3
+#db.sqlite3
 db.sqlite3-journal
 
 # Flask stuff:

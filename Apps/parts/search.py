@@ -3,7 +3,7 @@ from parts.models import PartCode, ArchiveBom, CurrentBom, ErpBom
 from django.db.models import Q
 from django.forms.models import model_to_dict
 from django.utils import timezone
-from parts.update import all_code, parent_arbom, child_arbom, parent_erpbom, child_erpbom
+from parts.loadpart import all_code, parent_arbom, child_arbom, parent_erpbom, child_erpbom
 import re
 from parts.read_excel import rule
 from archive.method import archivefind

@@ -5,7 +5,7 @@ from datetime import datetime
 from uuid import uuid4
 import os
 from django.utils import timezone
-from filemanage.settings import stage_type
+
 # Create your models here.
 # 检查并创建迁移项
 # python manage.py makemigrations

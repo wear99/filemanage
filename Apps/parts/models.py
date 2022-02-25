@@ -2,7 +2,7 @@ from django.db import models
 from django.utils import timezone
 from django.db.models.deletion import SET_NULL, PROTECT
 from django.forms.models import model_to_dict
-from filemanage.settings import stage_type
+
 # Create your models here.
 
 
@@ -20,10 +20,10 @@ class PartCode(models.Model):
     remark = models.CharField(
         max_length=20, blank=True, null=True, verbose_name='备注')
     division = models.CharField(
-        max_length=20, blank=True, null=True, verbose_name='分工')    
-    
+        max_length=20, blank=True, null=True, verbose_name='分工')
+
     part_valid = models.IntegerField(default=1, verbose_name='状态')
-    
+
     add_time = models.DateTimeField(default=timezone.now,blank=True, null=True, verbose_name='时间')
     file = models.ForeignKey(
         'files.ssFile', on_delete=SET_NULL, null=True, verbose_name='图纸')
@@ -34,7 +34,7 @@ class PartCode(models.Model):
 
     def __str__(self):
         return self.code
-    
+
     def to_dict(self):
         item=model_to_dict(self)
         item['add_time'] = self.add_time.strftime("%Y-%m-%d %H:%M")
@@ -69,12 +69,13 @@ class PartCost(models.Model):
 class ArchiveBom(models.Model):
     id = models.AutoField(primary_key=True)
     sn = models.CharField(max_length=32, verbose_name='序列号')
-    
+
     archive = models.CharField(max_length=64, null=True, verbose_name='发放单号')
 
     #生成最新Bom时判断有效性问题：小批最高10，试制5，实验1，
-    bom_type = models.IntegerField(
-        default=10, choices=stage_type, verbose_name='发放类型')
+    stage = models.ForeignKey('archive.StageType',
+                              on_delete=PROTECT,
+                              verbose_name='发放类型')
 
     parent = models.CharField(max_length=32, null=True, verbose_name='父项编码')
     child = models.ForeignKey(
@@ -112,26 +113,26 @@ class CurrentBom(models.Model):
     child = models.ForeignKey(
         'PartCode', on_delete=PROTECT,null=True ,verbose_name='子件编码', related_name='child')
     quantity = models.FloatField(max_length=4, verbose_name='数量')
-    
+
     sort_key = models.IntegerField(null=True, verbose_name='排序号')
     add_time = models.DateTimeField(default=timezone.now, verbose_name='更新时间')
-    
+
     class Meta:
-       verbose_name = '当前BOM'
-       unique_together = ("parent", "child")
-       verbose_name_plural = verbose_name
+        verbose_name = '当前BOM'
+        unique_together = ("parent", "child")
+        verbose_name_plural = verbose_name
 
     def __str__(self):
         return self.parent
 
-    def to_dict(self):  # 物料序列化        
-        item=model_to_dict(self.child)       
+    def to_dict(self):  # 物料序列化
+        item=model_to_dict(self.child)
 
         item['id'] = self.id
         item['parent'] = self.parent
         item['quantity'] = self.quantity
         item['add_time'] = self.add_time.strftime("%Y-%m-%d")
-        
+
         return item
 
 
@@ -141,10 +142,10 @@ class ErpBom(models.Model):
     sn = models.CharField(max_length=32, verbose_name='序列号')
 
     archive = models.CharField(max_length=64, verbose_name='产品代码')
-
-    bom_type = models.IntegerField(
-        default=10, choices=stage_type, verbose_name='发放类型')
     
+    stage = models.ForeignKey('archive.StageType',
+                              on_delete=PROTECT,
+                              verbose_name='发放类型')
     parent = models.CharField(max_length=64, verbose_name='父项编码')
     child = models.ForeignKey(
         'PartCode', on_delete=PROTECT, verbose_name='子件编码')
@@ -161,7 +162,7 @@ class ErpBom(models.Model):
         return self.sn+self.parent
 
     def to_dict(self):  # 物料序列化
-        item = model_to_dict(self, exclude=('child',))       
+        item = model_to_dict(self, exclude=('child',))
 
         item['sort_key'] = item['sn'].split('.')[-1]
         child = model_to_dict(self.child, exclude=('add_time'))
@@ -196,7 +197,7 @@ class Change(models.Model):
         max_length=50, null=True, verbose_name='处理建议')
     product = models.CharField(
         max_length=50, null=True, verbose_name='涉及产品')
-        
+
     add_time = models.DateTimeField(default=timezone.now, verbose_name='更新时间')
 
     class Meta:
@@ -205,4 +206,3 @@ class Change(models.Model):
 
     def __str__(self):
         return self.sn+self.parent
-

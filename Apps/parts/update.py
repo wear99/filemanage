@@ -4,111 +4,11 @@ from django.utils import timezone
 from parts.read_excel import read_design_BOM,rule
 import re
 
-
+from parts.loadpart import all_code, parent_erpbom, child_erpbom, erp_bom,load_code,load_archivebom,load_erpbom
 #ArchiveBom.objects.all().delete()
 #CurrentBom.objects.all().delete()
 
-#----------初始化：物料表、BOM表-----------------
 
-def load_code():
-    all={}
-    q = PartCode.objects.all().values()
-    for item in q:
-        item['add_time'] = item['add_time'].strftime("%Y-%m-%d")
-        all[item['code']] = item
-
-    return all
-
-
-# 不用
-def load_currentbom():
-    parent = {}
-    child = {}
-    qs = CurrentBom.objects.all().values()
-    for item in qs:
-        if item['parent'] not in child:
-            child[item['parent']] = [item]
-        else:
-            child[item['parent']].append(item)
-
-        if item['child_id'] not in parent:
-            parent[item['child_id']] = [item]
-        else:
-            parent[item['child_id']].append(item)
-    
-    return parent,child
-
-
-
-def load_bom(query): #分当前和历史
-    parent = {}
-    child = {}
-    bom={}
-    for item in query:
-        #item['add_time'] = item['add_time'].strftime("%Y-%m-%d")
-        
-        # 生成历史bom
-        if item['archive'] not in bom:
-            bom[item['archive']]=[item]
-        else:
-            bom[item['archive']].append(item)
-
-        #生成child 当前bom
-        if item['parent'] not in child:
-            child[item['parent']] = [item]            
-        else:
-            if item['archive'] == child[item['parent']][-1]['archive']:  #当处于同一个bom时
-                if item not in child[item['parent']]:
-                    child[item['parent']].append(item)
-
-            else:  #当处于不同Bom时,只能留存一个。先比较类型：小批的优先度最高，同优先度再比较时间
-                if item['parent']=='ROOT':
-                    child[item['parent']].append(item)
-                else:
-                    if item['bom_type'] > child[item['parent']][-1]['bom_type']:
-                        child[item['parent']] = [item]
-                    elif item['bom_type'] == child[item['parent']][-1]['bom_type']:
-                        if item['add_time'] > child[item['parent']][-1]['add_time']:
-                            child[item['parent']] = [item]
-                
-         
-    parent_key={}
-    #生成parent 当前bom
-    for c in child.values():
-        for item in c:
-            if item['child_id'] not in parent:
-                parent[item['child_id']] = [item]
-                parent_key[item['child_id']]=[item['parent']]
-            else:
-                if item['parent'] not in parent_key[item['child_id']]:
-                    parent[item['child_id']].append(item) 
-                    parent_key[item['child_id']].append(item['parent'])
-        
-    return parent, child,bom
-
-
-def load_archivebom():
-    query = ArchiveBom.objects.all().values()
-    return load_bom(query)
-
-
-def load_erpbom():  #分当前和历史结构
-    query = ErpBom.objects.all().values()
-    return load_bom(query)
-
-
-all_code = {}
-parent_arbom = {}  # 用于正向查询，key是父项，value是子项
-child_arbom = {}      # 用于正向查询，key是父项，value是子项
-archive_bom={}  
-erpbom={}
-parent_erpbom={}
-child_erpbom={}
-
-all_code = load_code()
-#parent_bom, child_bom = load_currentbom()
-parent_arbom, child_arbom,archive_bom = load_archivebom()
-parent_erpbom, child_erpbom, erp_bom = load_erpbom()
 
 #----------写入物料库---------------------
 
@@ -119,9 +19,9 @@ def update_archive_partcode(bom,add_time):  # 更新发放bom中的物料库, �
     for item in bom:
         # 使用字典去除重复的物料
         bom_dict[item['code']]=item
-    
+
     for key, item in bom_dict.items():
-        n=PartCode(code=key,name=item['name'],draw=item['draw'])        
+        n=PartCode(code=key,name=item['name'],draw=item['draw'])
         n.add_time = add_time
         if key not in all_code:
             new.append(n)
@@ -131,24 +31,24 @@ def update_archive_partcode(bom,add_time):  # 更新发放bom中的物料库, �
                 if item[i]!=all_code[key][i]:
                     mk = True
                     if item[i]:
-                        pass                       
+                        pass
                     else:
-                        item[i] = all_code[key][i]            
-            if mk:                
-                n.material = item['material']            
-                n.weight = item['weight']            
-                n.remark = item['remark']            
+                        item[i] = all_code[key][i]
+            if mk:
+                n.material = item['material']
+                n.weight = item['weight']
+                n.remark = item['remark']
                 n.division = item['division']
                 update.append(n)
-    
+
     if new:
-        PartCode.objects.bulk_create(new)        
+        PartCode.objects.bulk_create(new)
     if update:
         PartCode.objects.bulk_update(
             update, ['material', 'weight', 'remark', 'division','add_time'])
 
 
-def update_batch_partcode(bom):  # 更新小批物料库,   更新 图号、名称    
+def update_batch_partcode(bom):  # 更新小批物料库,   更新 图号、名称
     new=[]
     update=[]
     rst={}
@@ -191,7 +91,7 @@ def check_part_valid():
         if key[:-1]== codes[n+1][:-1]:
             if all_code[key]['part_valid']!=0:
                 old.append(key)
-    
+
     if old:
         PartCode.objects.filter(code__in=old).update(part_valid=0)
 
@@ -200,7 +100,7 @@ def check_part_valid():
 
 def update_file_output(bom,ar_id):   # 把Bom中分发部门写入文件库
     # 通过发放单号找出所有图纸，再和bom中图号比对
-    bom_dict = {}    
+    bom_dict = {}
     for item in bom:
         # 使用字典去除重复的物料
         if item['draw'] and 'GB' not in item['draw'] and item['output']:
@@ -220,17 +120,17 @@ def part_file(ar_id,bom=None,filelist=None):   # 关联图纸和物料
     # 找到所有发放单物料或bom物料
     # 找到所有发放单物料或file列表
     # 对两者同图号的进行关联，写入物料表
-    def get_part(): 
+    def get_part():
         bom_dict = {}
-        if bom:            
-            for item in bom:            
+        if bom:
+            for item in bom:
                 bom_dict[item['code']] = item   # 使用字典去除重复的物料
             codes = list(bom_dict.keys())
             q_part = PartCode.objects.filter(code__in=codes)
         else:
             q_part = PartCode.objects.filter(
                 archivebom__archive=ar_id)
-        
+
         part_obj={}
         for obj in q_part:
             if obj.code in bom_dict:
@@ -241,7 +141,7 @@ def part_file(ar_id,bom=None,filelist=None):   # 关联图纸和物料
 
         return part_obj
 
-    def get_file():        
+    def get_file():
         if filelist:
             objs = ssFile.objects.filter(archive=ar_id,file_id__in=filelist)
         else:
@@ -285,7 +185,7 @@ def update_archivebom_model(bom, ar_id,bom_type, add_time):  #更新发放bom库
         new.sn=item['sn']
         new.parent = item['parent']
         new.child_id=item['code']
-        new.quantity=item['quantity'] 
+        new.quantity=item['quantity']
         new.bom_type= bom_type
         new.add_time=add_time
         new_bom.append(new)
@@ -315,7 +215,7 @@ def update_currentbom(bom, add_time):  # 更新当前Bom库
         objs[obj.parent+obj.child.code] = obj
 
     # 正向对比，找出需要增加、更新的：
-    for key, item in items.items():        
+    for key, item in items.items():
         if key not in objs:
             new = CurrentBom(parent=item['parent'], child_id=item['code'],
                              quantity=item['quantity'], sort_key=item['sn'].split('.')[-1], add_time=add_time)
@@ -328,17 +228,17 @@ def update_currentbom(bom, add_time):  # 更新当前Bom库
 
     # 反向对比，找出需要删除的：
     for key, obj in objs.items():
-        if key not in items:            
+        if key not in items:
             obj.delete()
 
 
 
-def update_erpbom_model(bom,bom_type,add_time): # 更新erp bom库   
+def update_erpbom_model(bom,bom_type,add_time): # 更新erp bom库
     new_bom = []
     if 'root' == bom[0]['parent']:
         rootkey = bom[0]['code']+"#"+str(add_time.strftime("%Y-%m-%d"))
     else:
-        return 
+        return
 
     for item in bom:
         # 统一添加到数据库
@@ -357,7 +257,7 @@ def update_erpbom_model(bom,bom_type,add_time): # 更新erp bom库
         ErpBom.objects.filter(archive=rootkey).delete()
         ErpBom.objects.bulk_create(new_bom)
 
-    
+
 #-----------------更新入口程序------------------------------------
 
 def import_archivebom(fpath, ar_obj, add_time):  # 读取发放单中的BOM，并更新BOM和part库
@@ -390,7 +290,7 @@ def import_archivebom(fpath, ar_obj, add_time):  # 读取发放单中的BOM，�
         check_part_valid()
 
         parent_bom, child_bom = load_archivebom()
-        
+
         return {'success':''}
 
 
@@ -399,7 +299,7 @@ def import_upload_parts(fpath,add_time):   # 更新上传的物料库，先读�
     rst = read_design_BOM(fpath, type='CODE')
     if 'bom' in rst:
         rst = update_batch_partcode(rst['bom'])
-        
+
     elif 'error' in rst:
         pass
 
@@ -413,16 +313,16 @@ def import_upload_parts(fpath,add_time):   # 更新上传的物料库，先读�
 def import_upload_erpbom(fpath, add_time):  # 按发放bom格式,需检查全部有编码；
     rst = read_design_BOM(fpath, type='ARCHIVE')
     if 'error' in rst:
-        return rst    
-   
+        return rst
+
     # 更新erp bom库
     update_erpbom_model(rst['bom'], add_time)
 
     # 更新当前bom库
-    update_currentbom(rst['bom'], add_time)   
+    update_currentbom(rst['bom'], add_time)
 
     #重新读取全部erp bom
     global parent_erpbom, child_erpbom, erp_bom
     parent_erpbom, child_erpbom, erp_bom = load_erpbom()
-    
+
     return {'success': ''}

@@ -1,7 +1,7 @@
-from sqlalchemy import true
+
 from application.models import Application,ApplicationBom
 from parts.read_excel import read_design_BOM
-from parts.update import all_code,child_arbom
+from parts.loadpart import all_code,child_arbom
 from files.methods import filefind
 import zipfile
 

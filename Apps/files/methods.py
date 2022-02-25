@@ -6,27 +6,29 @@ from django.db.models import Q
 import os,zipfile,zipstream
 import threading
 
-from parts.update import part_file, all_code
+from parts.loadpart import  all_code
+from parts.update import part_file
 from parts.search import Partfind_dict, childfind_current
 from files.pdfhander import files_add_mark
 
 
 # 把已存在的同名文件、同发放类型的,按日期排序,只保留最新的，其余设为 失效0；
-def check_file_valid(obj):    
+def check_file_valid(obj):
     ex = ssFile.objects.filter(filename=obj.filename, stage=obj.stage,file_valid=1).exclude(
         file_id=obj.file_id).order_by('add_time').last()
     if ex:  #比较时间
-        if obj.add_time > ex.add_time:
-            ex.file_valid=0
-            ex.valid_info=obj.file_id
-            ex.valid_time=obj.add_time
-            ex.save()
-        else:
+        if obj.add_time < ex.add_time:
             obj.file_valid = 0
             obj.valid_info = ex.file_id
             obj.valid_time = ex.add_time
             obj.save()
-    
+
+        else:
+            ex.file_valid = 0
+            ex.valid_info = obj.file_id
+            ex.valid_time = obj.add_time
+            ex.save()
+
     # 如果是小批，还应把试制图纸设为失效
     if obj.stage.stage_id==9:
         ssFile.objects.filter(filename=obj.filename,
@@ -34,12 +36,12 @@ def check_file_valid(obj):
 
 
 # 上传文件处理：写入数据库；同图号的设为失效；加水印；和物料进行关联；
-def upload_file(ar_obj, files, username):
+def upload_file(ar_obj, files):
     add_mark = []
     up_files = {}
     for f in files:
         fname, ext = os.path.splitext(f.name.upper())   # 要去掉扩展名
-        
+
         new=ssFile()
         new.filename=fname
         new.archive = str(ar_obj.archive_id)
@@ -48,7 +50,7 @@ def upload_file(ar_obj, files, username):
         new.username = ar_obj.username
         new.filepath=f
         new.add_time = ar_obj.add_time
-        new.save()        
+        new.save()
 
 
         if ext == '.PDF':  # 增加文件水印
@@ -115,7 +117,7 @@ def childfind_file(fileid):
     id=[]
     for item in fbom:
         id.append(item['file_id'])
-        
+
     files = filefind(id,'FILE_ID')
 
     return files
