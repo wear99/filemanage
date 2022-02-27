@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}导入{% endblock %}
+ 
+{% block content %}
+    <div class="container">
+        <div class="col-md-10 pt-2"> 
+        <h3 class="display-4">读取物料库</h3>        
+                 
+        <form id='form'  method="post" action="" enctype="multipart/form-data">
+            {% if msg %}
+                <div class="alert alert-warning">{{ msg }}</div>
+            {% endif %}
+
+            {% csrf_token %}
+            <input type="submit" value="读取SStech物料库" class="btn btn-primary py-3 ">        
+        </form>  
+    </div>        
+
+    </div> <!-- /container -->
+{% endblock %}
+
+{% block custom-script %}
+    <script>         
+
+    </script> 
+{% endblock %}

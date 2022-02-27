@@ -23,6 +23,7 @@ class PartCode(models.Model):
         max_length=20, blank=True, null=True, verbose_name='分工')
 
     part_valid = models.IntegerField(default=1, verbose_name='状态')
+    valid_time = models.DateTimeField(null=True, verbose_name='失效时间')
 
     add_time = models.DateTimeField(default=timezone.now,blank=True, null=True, verbose_name='时间')
     file = models.ForeignKey(
@@ -53,6 +54,7 @@ class PartCost(models.Model):
 
     source = models.CharField(max_length=20, default='导入', verbose_name='成本来源')
     cost_valid = models.IntegerField(default=1, verbose_name='状态')
+    valid_time = models.DateTimeField(null=True, verbose_name='失效时间')
 
     add_time = models.DateTimeField(default=timezone.now, verbose_name='时间')
 
@@ -81,6 +83,10 @@ class ArchiveBom(models.Model):
     child = models.ForeignKey(
         'PartCode', on_delete=PROTECT, verbose_name='子件编码')
     quantity = models.FloatField(max_length=4, verbose_name='数量')
+
+    bom_valid = models.IntegerField(default=1, verbose_name='Bom状态')
+    valid_info = models.CharField(max_length=128,null=True,verbose_name='失效单号')
+    valid_time = models.DateTimeField(null=True,verbose_name='失效时间')
 
     remark = models.CharField(max_length=50, null=True, verbose_name='备注')
     add_time = models.DateTimeField(default=timezone.now, verbose_name='更新时间')
@@ -142,7 +148,7 @@ class ErpBom(models.Model):
     sn = models.CharField(max_length=32, verbose_name='序列号')
 
     archive = models.CharField(max_length=64, verbose_name='产品代码')
-    
+
     stage = models.ForeignKey('archive.StageType',
                               on_delete=PROTECT,
                               verbose_name='发放类型')
@@ -150,6 +156,10 @@ class ErpBom(models.Model):
     child = models.ForeignKey(
         'PartCode', on_delete=PROTECT, verbose_name='子件编码')
     quantity = models.FloatField(max_length=4, verbose_name='数量')
+
+    bom_valid = models.IntegerField(default=1, verbose_name='Bom状态')
+    valid_info = models.CharField(max_length=128,null=True,verbose_name='失效单号')
+    valid_time = models.DateTimeField(null=True, verbose_name='失效时间')
 
     remark = models.CharField(max_length=50, null=True, verbose_name='备注')
     add_time = models.DateTimeField(default=timezone.now, verbose_name='更新时间')

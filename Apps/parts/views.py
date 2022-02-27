@@ -1,11 +1,10 @@
-
 from django.shortcuts import get_object_or_404, render, redirect
 from django.urls import reverse
 from django.http.response import Http404, HttpResponse, JsonResponse, FileResponse
 from django.views.generic import View
 from parts.change import change_child, change_find, change_parent, import_changes
 
-from parts.update import import_upload_parts, import_upload_erpbom, import_archivebom
+from parts.update import import_upload_parts, import_upload_erpbom, import_archivebom,import_sstech_code
 from parts.forms import FileUploadForm, ArchiveBomUploadForm
 from parts.search import *
 from parts.cost import bom_add_cost, bom_recalc_cost, import_upload_cost, find_cost_history
@@ -20,7 +19,7 @@ import json
 # ===================================导入 相关视图=========================
 # 文件导入统一入口
 
-
+#不用
 def uploadFileView(request):
     form = FileUploadForm(request.POST, request.FILES)
     if form.is_valid():
@@ -176,6 +175,21 @@ class UploadErpBomView(View):
         return render(request, 'info.html', locals())
 
 
+#读取sstech物料库
+class ReadSstechCodeView(View):
+    def get(self,request):
+        return render(request, 'parts/part_sstechcode.html', locals())
+    def post(self,request):
+        rst = import_sstech_code()
+
+        if 'error' in rst:
+            title = '导入失败'
+            info = rst['error']
+        else:
+            title = '导入成功'
+
+        return render(request, 'info.html', locals())
+
 # ===================================物料查找 相关视图=========================
 # 采用bootstrap-table 的ajax方式
 class PartFindView(View):
@@ -189,15 +203,16 @@ class PartFindView(View):
         field_type = request.POST.get('field_type', None)
         opt = request.POST.get('opt', 'AND')
 
-        files = []
+        parts = []
         if search:
             search = search.split(" ")
-            files = Partfind_dict(search, field_type, opt)
-        total = len(files)
-        return JsonResponse({'total': total, 'rows': files})
+            #parts = Partfind_dict(search, field_type, opt)
+            parts = Partfind(search, field_type, opt)
+        total = len(parts)
+        return JsonResponse({'total': total, 'rows': parts})
 
 
-
+# 查询物料的所有版本
 class PartHistoryView(View):
     def post(self, request):
         search = request.POST.get('search', None)
@@ -353,6 +368,3 @@ class ChangeFindView(View):
 
         total = len(rows)
         return JsonResponse({'total': total, 'rows': rows})
-
-
-

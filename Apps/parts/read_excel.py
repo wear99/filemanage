@@ -27,15 +27,15 @@ def read_design_BOM(fpath, type='BATCH'):
             '子件编码': 'code',
             '新编码': 'code',
             '编码': 'code',
-            '代号': 'draw', 
+            '代号': 'draw',
             '图号': 'draw',
             '子件名称': 'name',
             '描述': 'name',
             '名称': 'name',
-            '用量': 'quantity',            
+            '用量': 'quantity',
             '基本用量': 'quantity',
             '使用数量': 'quantity',
-            '数量': 'quantity',            
+            '数量': 'quantity',
             '子件规格': 'material',
             '材料': 'material',
             '单重': 'weight',
@@ -43,7 +43,7 @@ def read_design_BOM(fpath, type='BATCH'):
             '材料成本': 'material_cost',
             '人工成本': 'labor_cost',
             '费用成本': 'managed_cost',
-            '日期': 'time',  
+            '日期': 'time',
             '时间': 'time',
             '零部件图号': 'draw',
             '零部件名称': 'name',
@@ -65,7 +65,7 @@ def read_design_BOM(fpath, type='BATCH'):
         for key, item in lable.items():
             if item in title:
                 lable_t[key] = item
-        
+
         for row in wsheet.values:  # 只检查第一行
             col_['used'] = []
             for c, value in enumerate(row):
@@ -76,7 +76,7 @@ def read_design_BOM(fpath, type='BATCH'):
                             if 'lv' not in col_:
                                 col_['lv'] = [c, ]
                             else:
-                                col_['lv'].append(c)                        
+                                col_['lv'].append(c)
                         else:
                             if lable_t[key] in col_:
                                 return '%s 的属性列重复' % key
@@ -126,7 +126,7 @@ def read_design_BOM(fpath, type='BATCH'):
             if isinstance(x,datetime):
                 return x
             else:
-                return ""            
+                return ""
 
         def get_lv(lvs):
             if len(lvs) == 1:  # 针对层次只有1列：一种是'+++'，另一种是数字加.来区分
@@ -156,7 +156,7 @@ def read_design_BOM(fpath, type='BATCH'):
         lv_2 = 2
         root_row=0
         for row in wsheet.iter_rows(values_only=True,min_row=2):
-            row_num += 1            
+            row_num += 1
             item = {}
             item['row'] = row_num
             if 'lv' in title and row_num == 2:
@@ -169,7 +169,7 @@ def read_design_BOM(fpath, type='BATCH'):
             for key in title:
                 if key in col:
                     if key == 'lv':
-                        if row[0] and row[0].upper() == 'ROOT':                            
+                        if row[0] and row[0].upper() == 'ROOT':
                             item['lv'] =1
                             root_row = row_num
                         else:
@@ -194,10 +194,10 @@ def read_design_BOM(fpath, type='BATCH'):
                 if isinstance(item['lv'], int):
                     if row_num == root_row+1:   # Root的第二行的层次必须是2, 确定一个层次的调整系数
                         lv_2 = item['lv']
-                    item['lv'] = item['lv']+2-lv_2 
+                    item['lv'] = item['lv']+2-lv_2
 
                     # 检查层次是否脱节
-                    if len(excel_bom) > 1 and item['lv'] > excel_bom[-1]['lv'] + 1:                    
+                    if len(excel_bom) > 1 and item['lv'] > excel_bom[-1]['lv'] + 1:
                         item_error.append('第 ' + str(row_num) + ' 行层次和上层脱节')
                 else:
                     item_error.append('第 ' + str(row_num) + item['lv'])
@@ -225,18 +225,18 @@ def read_design_BOM(fpath, type='BATCH'):
                         pass
                     else:
                         item_error.append('第 ' + str(row_num) + '行编码格式不对')
-                
+
             if not item_error:
                 # 物料字段以字典形式
                 excel_bom.append(item)
 
     def add_sn(read_bom):
-        sn = {1: 0}        
+        sn = {1: 0}
         new = []
         for item in read_bom:
             if not isinstance(item['lv'], int):
                 return
-            lv = item['lv']            
+            lv = item['lv']
             # 添加SN
             sn[item['lv']] += 1
             s = ''
@@ -253,7 +253,7 @@ def read_design_BOM(fpath, type='BATCH'):
 
         return new
 
-    def add_parent(read_bom,field):        
+    def add_parent(read_bom,field):
         pids={0:'ROOT'}
         new=[]
         for item in read_bom:
@@ -273,10 +273,10 @@ def read_design_BOM(fpath, type='BATCH'):
 
     def add_total(read_bom):
         lv={0:1}
-        
+
         for item in read_bom:
             if not isinstance(item['lv'], int):
-                return          
+                return
 
             lv[item['lv']] = lv[item['lv']-1]*item['quantity']
             item['total'] = lv[item['lv']]
@@ -286,9 +286,8 @@ def read_design_BOM(fpath, type='BATCH'):
         return read_bom
 
 
-    excel_bom = []
-    org_bom = []    
-    rst = {}    
+    excel_bom = []    
+    rst = {}
     item_error = []
 
     if type in ('BATCH', 'DESIGN', 'EXPER', 'CUSTOM', 'ARCHIVE','ERPBOM'):
@@ -326,23 +325,32 @@ def read_design_BOM(fpath, type='BATCH'):
     except Exception as ex:
         rst['error'] = '文件读取失败：'+str(ex)
         return rst
-   
-    wsheet = wbook.active
-    col = get_col(wsheet)
-    if isinstance(col, dict):
-        rst['col'] = col
-        read_item(wsheet)
+
+    if type == 'CODE':
+        names=wbook.sheetnames
     else:
-        rst['error'] = col
-        wbook.close()
-        return rst
+        names = [wbook.active.title]
+
+    for sname in names:  #读取多个工作表
+        wsheet = wbook[sname]
+        col=get_col(wsheet)
+        if isinstance(col, dict):
+            rst['col']=col
+            read_item(wsheet)
+        else:
+            if len(names)>1:
+                skip_sheet += wsheet.title +' : '+col+ ' ;'
+            else:
+                rst['error'] = '缺少标题行：' + skip_sheet
 
     wbook.close()
+    if skip_sheet:
+        rst['skip'] = '跳过的工作表：'+skip_sheet        
 
     if item_error:
         item_error = [[1, x] for x in item_error]
         rst['error'] = item_error
-    
+
     if 'error' not in rst:
         return rst
 
@@ -355,9 +363,10 @@ def read_design_BOM(fpath, type='BATCH'):
                 excel_bom = add_parent(excel_bom, 'sn')
 
             if 'quantity' in need:
-                excel_bom = add_total(excel_bom)        
+                excel_bom = add_total(excel_bom)
 
-        rst['bom'] = excel_bom
-        rst['org_bom'] = org_bom  # 读取的原始内容
+        rst['bom'] = excel_bom        
 
     return rst  # {字典形式}
+
+

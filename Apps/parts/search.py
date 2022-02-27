@@ -86,17 +86,19 @@ def part_add_info(bom):
 
 
 # -----------------part库查找----------------------
-def Partfind(type, search, opt):  # 物料查找方法
-    qset = Q()
+def Partfind(search,field_type, opt='AND'):  # 物料查找方法
+    qset = PartCode.objects.all()
     for i, item in enumerate(search):
-        if type == 'code':
+        if field_type == 'code':
             q = Q(code__icontains=item)
-        elif type == 'draw':
+        elif field_type == 'draw':
             q = Q(draw__icontains=item)
-        elif type == 'partname':
+        elif field_type == 'partname':
             q = Q(name__icontains=item)
-        elif type == 'remark':
+        elif field_type == 'remark':
             q = Q(remark__icontains=item)
+        elif field_type == 'file_id':
+            q = Q(file_id=item)
         else:
             q = Q(code__icontains=item) | Q(
                 draw__icontains=item) | Q(name__icontains=item) | Q(material__icontains=item) | Q(remark__icontains=item)
@@ -105,14 +107,10 @@ def Partfind(type, search, opt):  # 物料查找方法
             qset = qset | q
         else:
             qset = qset & q
-    queryset = PartCode.objects.filter(qset).order_by()
 
     parts = []
-    for obj in queryset:
-        item = model_to_dict(obj)
-        item['add_time'] = obj.add_time.strftime("%Y-%m-%d")
-        if obj.file:
-            item['file_id'] = obj.file.file_id
+    for item in qset.values():
+        item['add_time'] = item['add_time'].strftime("%Y-%m-%d")
         parts.append(item)
 
     return parts
@@ -153,12 +151,12 @@ def get_bom_model(bom_type='ARCHIVE',ar_id=None):
 
     if ar_id:
         query = query.filter(archive=ar_id)
-    
+
     return query
 
 
 
-def childfind_model(code,bom_type,ar_id=None):        
+def childfind_model(code,bom_type,ar_id=None):
     query = get_bom_model(bom_type, ar_id)
 
     if ar_id and code=='ROOT':
@@ -197,7 +195,7 @@ def childfind_model(code,bom_type,ar_id=None):
 
 def parentfind_model(code, bom_type,ar_id=None):
     query = get_bom_model(bom_type, ar_id)
-    
+
     objs = query.filter(child=code).values()
     if not objs:
         return []
@@ -206,7 +204,7 @@ def parentfind_model(code, bom_type,ar_id=None):
     for obj in objs:
         if obj['archive'] not in ar:
             ar[obj['archive']] = []
-        
+
         ar[obj['archive']]=parent_sn(obj['sn'])
 
     bom = []
@@ -236,7 +234,7 @@ def rootfind(search, field_type, bom_type):  # 查询Bom结构：发放单号、
         return ar_list
 
     query = get_bom_model(bom_type)
-    
+
     if field_type in ('ARCHIVE_NO', 'PRODUCT_NAME', 'PRODUCT_CODE', 'USERNAME'):
         query = query.filter(archive__in=get_ar_list(search, field_type))
     elif field_type == 'ARCHIVE_ID':
@@ -477,7 +475,7 @@ def partHistoryFind(code):
 
     code_his = []
     draw=all_code[code]['draw']
-    
+
     if 'GB' in draw or 'JB' in draw:
         draw=''
     else:
@@ -485,13 +483,13 @@ def partHistoryFind(code):
         draw = re.sub("（", '(', draw)
         draw = re.sub("）", ')', draw)
 
-        draw = re.sub("\(.*\)", '', draw)        
+        draw = re.sub("\(.*\)", '', draw)
 
     for key in all_code:
-        if re.match(rule['code'], key): 
+        if re.match(rule['code'], key):
             if key.startswith(code[:-1]):
                 code_his.append(all_code[key])
             elif draw and all_code[key]['draw'] and draw in all_code[key]['draw']:
-                code_his.append(all_code[key])        
+                code_his.append(all_code[key])
 
     return code_his

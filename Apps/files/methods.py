@@ -8,7 +8,7 @@ import threading
 
 from parts.loadpart import  all_code
 from parts.update import part_file
-from parts.search import Partfind_dict, childfind_current
+from parts.search import Partfind_dict, childfind_current, Partfind
 from files.pdfhander import files_add_mark
 
 
@@ -86,16 +86,10 @@ def filefind(search,field_type):
     files = []
     for item in objs.values():
         item['add_time'] = item['add_time'].strftime("%Y-%m-%d")
-
-        # 查找图纸被关联的物料
-        for key,value in all_code.items():
-            if value['file_id']==item['file_id']:
-                #part = obj.partcode_set.last()
-                item['code'] = value['code']
-                item['name'] = value['name']
-                item['draw'] = value['draw']
-
         files.append(item)
+
+    # 查找图纸被关联的物料
+        
 
     return files
 

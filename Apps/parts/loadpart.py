@@ -3,14 +3,16 @@ from .models import ArchiveBom, PartCode, CurrentBom, ErpBom
 #----------初始化：物料表、BOM表-----------------
 
 
-def load_code():    
+def load_code():
     all = {}
     q = PartCode.objects.all().values()
     for item in q:
         item['add_time'] = item['add_time'].strftime("%Y-%m-%d")
         all[item['code']] = item
 
-    return all
+    global all_code
+    all_code=all
+
 
 
 # 不用
@@ -33,7 +35,7 @@ def load_currentbom():
 
 
 def load_bom(query):  #分当前和历史
-    
+
     parent = {}
     child = {}
     bom = {}
@@ -85,12 +87,18 @@ def load_bom(query):  #分当前和历史
 
 def load_archivebom():
     query = ArchiveBom.objects.all().values()
-    return load_bom(query)
+
+    global parent_arbom, child_arbom, archive_bom
+
+    parent_arbom, child_arbom, archive_bom= load_bom(query)
 
 
 def load_erpbom():  #分当前和历史结构
     query = ErpBom.objects.all().values()
-    return load_bom(query)
+
+    global parent_erpbom, child_erpbom, erp_bom
+
+    parent_erpbom, child_erpbom, erp_bom= load_bom(query)
 
 
 all_code = {}
@@ -101,7 +109,7 @@ erp_bom = {}
 parent_erpbom = {}
 child_erpbom = {}
 
-#all_code = load_code()
+#load_code()
 #parent_bom, child_bom = load_currentbom()
-#parent_arbom, child_arbom, archive_bom = load_archivebom()
-#parent_erpbom, child_erpbom, erp_bom = load_erpbom()
+#load_archivebom()
+#load_erpbom()

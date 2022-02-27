@@ -4,7 +4,7 @@ from django.utils import timezone
 from parts.read_excel import read_design_BOM,rule
 import re
 
-from parts.loadpart import all_code, parent_erpbom, child_erpbom, erp_bom,load_code,load_archivebom,load_erpbom
+from parts.loadpart import load_code,load_archivebom,load_erpbom
 #ArchiveBom.objects.all().delete()
 #CurrentBom.objects.all().delete()
 
@@ -16,24 +16,30 @@ def update_archive_partcode(bom,add_time):  # 更新发放bom中的物料库, �
     bom_dict={}
     new=[]
     update=[]
+
     for item in bom:
         # 使用字典去除重复的物料
         bom_dict[item['code']]=item
 
+    qt=PartCode.objects.filter(code_in=bom_dict.keys()).values()
+    ex_part={}
+    for item in qt:
+        ex_part[item['code']]=item
+
     for key, item in bom_dict.items():
         n=PartCode(code=key,name=item['name'],draw=item['draw'])
         n.add_time = add_time
-        if key not in all_code:
+        if key not in ex_part:
             new.append(n)
         else:
             mk=False
             for i in ('material', 'weight', 'remark', 'division'):
-                if item[i]!=all_code[key][i]:
+                if item[i] != ex_part[key][i]:
                     mk = True
                     if item[i]:
                         pass
                     else:
-                        item[i] = all_code[key][i]
+                        item[i] = ex_part[key][i]
             if mk:
                 n.material = item['material']
                 n.weight = item['weight']
@@ -52,10 +58,22 @@ def update_batch_partcode(bom):  # 更新小批物料库,   更新 图号、名�
     new=[]
     update=[]
     rst={}
+
+    bom_dict = {}
     for item in bom:
+        # 使用字典去除重复的物料
+        bom_dict[item['code']] = item
+
+    qt = PartCode.objects.filter(code_in=bom_dict.keys()).values()
+    ex_part = {}
+    for item in qt:
+        ex_part[item['code']] = item
+
+    for key, item in bom_dict.items():
         np = PartCode()
         np.code = item['code']
         np.name = item['name']
+
         if item['draw']:
             np.draw = item['draw']
         if item['material']:
@@ -63,13 +81,14 @@ def update_batch_partcode(bom):  # 更新小批物料库,   更新 图号、名�
         if item['time']:
             np.add_time = item['time']
 
-        if item['code'] in all_code:
-            if item['name'] != all_code[item['code']]['name'] or item['draw'] != all_code[item['code']]['draw']:
+        if key in ex_part:
+            if item['name'] != ex_part[item['code']]['name'] or item[
+                    'draw'] != ex_part[item['code']]['draw']:
                 update.append(np)
         else:
             new.append(np)
 
-    rst['total']=len(bom)
+    rst['total']=len(bom_dict)
     if new:
         PartCode.objects.bulk_create(new)
         rst['new']=len(new)
@@ -81,7 +100,12 @@ def update_batch_partcode(bom):  # 更新小批物料库,   更新 图号、名�
 
 
 def check_part_valid():
-    codes=list(all_code.keys())
+    all = {}
+    q = PartCode.objects.filter(part_valid=1).values()
+    for item in q:        
+        all[item['code']] = item
+
+    codes=list(all.keys())
     codes.sort()
     old=[]
     for n,key in enumerate(codes[:-1]):
@@ -89,7 +113,7 @@ def check_part_valid():
             continue
 
         if key[:-1]== codes[n+1][:-1]:
-            if all_code[key]['part_valid']!=0:
+            if all[key]['part_valid']!=0:
                 old.append(key)
 
     if old:
@@ -174,6 +198,8 @@ def part_file(ar_id,bom=None,filelist=None):   # 关联图纸和物料
 
 
 #-------------------写入bom库----------------------------------
+def check_bom_valid():
+    pass
 
 def update_archivebom_model(bom, ar_id,bom_type, add_time):  #更新发放bom库，是否要把没有包含的子件带进去？
 
@@ -285,11 +311,10 @@ def import_archivebom(fpath, ar_obj, add_time):  # 读取发放单中的BOM，�
         part_file(bom=rst['bom'],ar_id=ar_id)
 
         # 更新内存物料字典
-        global all_code, parent_bom, child_bom
-        all_code=load_code()
-        check_part_valid()
 
-        parent_bom, child_bom = load_archivebom()
+        load_code()
+        check_part_valid()
+        load_archivebom()
 
         return {'success':''}
 
@@ -299,12 +324,63 @@ def import_upload_parts(fpath,add_time):   # 更新上传的物料库，先读�
     rst = read_design_BOM(fpath, type='CODE')
     if 'bom' in rst:
         rst = update_batch_partcode(rst['bom'])
+    else:
+        return {'error':'物料库更新失败'}
 
-    elif 'error' in rst:
-        pass
 
-    global all_code
-    all_code = load_code()
+    load_code()
+    check_part_valid()
+
+    return rst
+
+
+def import_sstech_code():
+    path = '\\\\Sstech\\erp info\\Code\\2010-12-13开始使用新编码\\'
+    filename = [
+        'OEM&集成系统&能效系统加工件新编码.xlsx',
+        '槽烫加工件新编码.xlsx',
+        '干洗加工件新编码.xlsx',
+        '干衣机加工件新编码.xlsx',
+        '滚筒烫平机加工件新编码.xlsx',
+        '水洗加工件新编码.xlsx',
+        '折叠机加工件新编码.xlsx',
+        '备品备件新编码.xlsx',
+        '标贴和铭牌新编码.xlsx',
+        '各种采购件新编码.xlsx',
+        '原材料新编码.xlsx',
+        '产成品新编码20101213.xlsx'
+        ]
+    filename1 = [
+        '产成品新编码20101213.xlsx',
+        ]
+
+    files = [path + x for x in filename]
+    read_code = []
+    read_err=[]
+    # 开始读取所有code文件---------------------------------------
+    for file in files:
+        name = file.split('\\')[-1]
+        rst = read_design_BOM(file, type='CODE')
+        if not rst:
+            read_err.append(name+":"+'读取失败')
+        else:
+            if 'error' in rst:
+                read_err.append(name + ":" + rst['error'])
+            elif 'skip' in rst:
+                read_err.append(name + ":" + rst['skip'])
+            elif 'bom' in rst:
+                read_code+=rst['bom']
+
+    # 开始把读取的编码进行更新-------------------------------------------------
+    rst={}
+    if read_code:
+        rst = update_batch_partcode(read_code)
+
+    else:
+        return {'error':'物料库更新失败'}
+
+    # 重新读取所有物料
+    load_code()
     check_part_valid()
 
     return rst
@@ -322,7 +398,6 @@ def import_upload_erpbom(fpath, add_time):  # 按发放bom格式,需检查全部
     update_currentbom(rst['bom'], add_time)
 
     #重新读取全部erp bom
-    global parent_erpbom, child_erpbom, erp_bom
-    parent_erpbom, child_erpbom, erp_bom = load_erpbom()
+    load_erpbom()
 
     return {'success': ''}
